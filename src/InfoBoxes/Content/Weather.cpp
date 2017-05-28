@@ -47,7 +47,7 @@ UpdateInfoBoxHumidity(InfoBoxData &data)
   }
 
   // Set Value
-  data.UnsafeFormatValue( _T("%d"), (int)basic.humidity);
+  data.UnsafeFormatValue( _T("%2.1f"), (float)basic.humidity);
 }
 
 void
