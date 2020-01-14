@@ -29,6 +29,7 @@ Copyright_License {
 #include "Task/ProtectedTaskManager.hpp"
 #include "Engine/Task/TaskManager.hpp"
 #include "Engine/Task/Unordered/AlternateList.hpp"
+#include "Event/KeyCode.hpp"
 #include "Components.hpp"
 #include "Interface.hpp"
 #include "UIGlobals.hpp"
@@ -40,7 +41,6 @@ Copyright_License {
 class AlternatesListWidget final
   : public ListWidget, private ActionListener {
   enum Buttons {
-    SETTINGS,
     GOTO,
   };
 
@@ -76,6 +76,7 @@ public:
   void Unprepare() override {
     DeleteWindow();
   }
+  virtual bool KeyPress(unsigned) override;
 
   /* virtual methods from class List::Handler */
   void OnPaintItem(Canvas &canvas, const PixelRect rc,
@@ -143,6 +144,18 @@ AlternatesListWidget::OnAction(int id) noexcept
 
     break;
   }
+}
+
+bool
+AlternatesListWidget::KeyPress(unsigned key_code)
+{
+  printf("alternates widget\n");
+  if(key_code == KEY_TAB)
+  {
+      printf("TAB\n");
+      return true;
+  }
+  return false;
 }
 
 void
