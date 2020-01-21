@@ -339,7 +339,7 @@ KRT2Device::ExpectedMsgLengthSTX(uint8_t code)
   case 'C':
     // Exchange frequencies
   case '8':
-    // Unknown code, received once after power up, STX '8'
+    // STX '8' indicates 8.33 KHz mode
   case 'B':
     // Low batt
   case 'D':
@@ -406,6 +406,12 @@ KRT2Device::GetStationName(char *station_name, const TCHAR *name)
 void
 KRT2Device::HandleSTXCommand(const struct stx_msg * msg, struct NMEAInfo & info)
 {
+  if(msg->command == 'C')
+  {
+      std::swap(info.settings.active_frequency, info.settings.standby_frequency);
+      std::swap(info.settings.active_freq_name, info.settings.standby_freq_name);
+      return;
+  }
   if(msg->command != 'U' && msg->command != 'R') {
     return;
   }
