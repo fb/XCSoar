@@ -437,7 +437,6 @@ ListControl::OnKeyDown(unsigned key_code)
 
   switch (key_code) {
   case KEY_RETURN:
-    return false; // TODO: do not keep this!
     if (CanActivateItem())
       ActivateItem();
     return true;
