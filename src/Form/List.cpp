@@ -436,6 +436,11 @@ ListControl::OnKeyDown(unsigned key_code)
   kinetic_timer.Cancel();
 
   switch (key_code) {
+  case KEY_RETURN:
+    if (CanActivateItem())
+      ActivateItem();
+    return true;
+
   case KEY_UP:
     // previous item
     if (GetCursorIndex() <= 0)
