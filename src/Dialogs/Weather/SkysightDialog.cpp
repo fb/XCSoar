@@ -136,7 +136,7 @@ public:
     return row_renderer.CalculateLayout(*look.list.font);
   }
 
-  virtual void OnPaintItem(Canvas &canvas, const PixelRect rc, unsigned i) override {
+  virtual void OnPaintItem(Canvas &canvas, const PixelRect rc, unsigned i) noexcept override {
     row_renderer.DrawTextRow(canvas, rc, skysight->GetMetric(i).name.c_str());
   }
   
@@ -213,14 +213,14 @@ public:
 protected:
   /* virtual methods from ListItemRenderer */
   virtual void OnPaintItem(Canvas &canvas, const PixelRect rc,
-                           unsigned idx) override;
+                           unsigned idx) noexcept override;
 
   /* virtual methods from ListCursorHandler */
-  virtual bool CanActivateItem(unsigned index) const override {
+  virtual bool CanActivateItem(unsigned index) const noexcept override {
     return true;
   }
 
-  virtual void OnActivateItem(unsigned index) override {};
+  virtual void OnActivateItem(unsigned index) noexcept override {};
 
 private:
   /* virtual methods from class ActionListener */
@@ -296,7 +296,8 @@ SkysightWidget::UpdateList()
 
 }
 
-void SkysightWidget::OnPaintItem(Canvas &canvas, const PixelRect rc, unsigned index)
+void
+SkysightWidget::OnPaintItem(Canvas &canvas, const PixelRect rc, unsigned index) noexcept
 {
   row_renderer.Draw(canvas, rc, index);
 }
