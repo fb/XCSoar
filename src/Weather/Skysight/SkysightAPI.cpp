@@ -256,7 +256,6 @@ SkysightAPI::ParseResponse(const tstring &&result, const bool success, const Sky
 
 }
 
-
 bool SkysightAPI::ParseRegions(const SkysightRequestArgs &args, const tstring &result) {
 
   boost::property_tree::ptree details;
@@ -459,8 +458,6 @@ bool SkysightAPI::ParseLogin(const SkysightRequestArgs &args, const tstring &res
   return success;
 }
 
-
-
 bool SkysightAPI::ParseData(const SkysightRequestArgs &args, const tstring &result) {
 
   auto output_img = GetPath(SkysightCallType::Image, args.layer.c_str(), args.from);
@@ -471,11 +468,6 @@ bool SkysightAPI::ParseData(const SkysightRequestArgs &args, const tstring &resu
   
   return true;
 }
-
-
-
-
-
 
 bool SkysightAPI::GetData(SkysightCallType t, const TCHAR *const layer,
                           const uint64_t from, const uint64_t to, const TCHAR *const link,
@@ -521,7 +513,6 @@ bool SkysightAPI::LoadFromFile(Path path, tstring &content) {
   return true;
 }
 
-
 bool SkysightAPI::CacheAvailable(Path path, SkysightCallType calltype, const TCHAR *const layer) {
 
   uint64_t layer_updated = 0;
@@ -558,9 +549,7 @@ bool SkysightAPI::CacheAvailable(Path path, SkysightCallType calltype, const TCH
         break;
     }
   }
-
   return false;
-
 }
 
 bool SkysightAPI::GetResult(const SkysightRequestArgs &args, const tstring result, boost::property_tree::ptree &output) {
@@ -649,5 +638,4 @@ void SkysightAPI::OnTimer() {
       break;
     }
   }
-  
 }
