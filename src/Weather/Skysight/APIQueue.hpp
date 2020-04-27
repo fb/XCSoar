@@ -27,12 +27,12 @@ Copyright_License {
 #include "CDFDecoder.hpp"
 #include "Metrics.hpp"
 #include "Event/Timer.hpp"
-#include <vector>
+#include <queue>
 
 
 class SkysightAPIQueue final : public Timer {
-  std::vector<std::unique_ptr<SkysightAsyncRequest>> request_queue;
-  std::vector<std::unique_ptr<CDFDecoder>> decode_queue;
+  std::queue<std::unique_ptr<SkysightAsyncRequest>> request_queue;
+  std::queue<std::unique_ptr<CDFDecoder>> decode_queue;
   bool is_busy = false;
   
   void Process();
@@ -55,7 +55,5 @@ public:
   void Clear(const tstring &&msg);
   
 };
-
-
 
 #endif

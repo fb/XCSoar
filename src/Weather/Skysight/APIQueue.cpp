@@ -38,18 +38,17 @@ SkysightAPIQueue::~SkysightAPIQueue() {
 
 void SkysightAPIQueue::AddRequest(std::unique_ptr<SkysightAsyncRequest> &&request, bool append_end) {
 
+  request_queue.push(std::move(request));
   if(!append_end) {
     //Login requests jump to the front of the queue
-    request_queue.insert(request_queue.begin(), std::move(request));
-  } else {
-    request_queue.emplace_back(std::move(request));
+    request_queue.front().swap(request_queue.back());
   }
   if(!is_busy)
     Process();
 }
 
 void SkysightAPIQueue::AddDecodeJob(std::unique_ptr<CDFDecoder> &&job) {
-  decode_queue.emplace_back(std::move(job));
+  decode_queue.push(std::move(job));
   if(!is_busy)
     Process();
 }
@@ -58,22 +57,22 @@ void SkysightAPIQueue::AddDecodeJob(std::unique_ptr<CDFDecoder> &&job) {
 void SkysightAPIQueue::Process() {
   is_busy = true;
   
-  if(!empty(request_queue)) {
-    auto job = request_queue.begin();
-    switch((*job)->GetStatus()) {
+  if(!request_queue.empty()) {
+    std::unique_ptr<SkysightAsyncRequest> job = std::move(request_queue.front());
+    switch(job->GetStatus()) {
       case SkysightRequest::Status::Idle:
         
         //Provide the job with the very latest API key just prior to execution
-        if((*job)->GetType() == SkysightCallType::Login) {
-          (*job)->SetCredentials("XCSoar", email.c_str(), password.c_str());
-          (*job)->Process();
+        if(job->GetType() == SkysightCallType::Login) {
+          job->SetCredentials("XCSoar", email.c_str(), password.c_str());
+          job->Process();
         } else {
           if (!IsLoggedIn()) {
             // inject a login request at the front of the queue
             SkysightAPI::GenerateLoginRequest();
           } else {
-            (*job)->SetCredentials(key.c_str());
-            (*job)->Process();
+            job->SetCredentials(key.c_str());
+            job->Process();
           }
         }
 
@@ -82,26 +81,25 @@ void SkysightAPIQueue::Process() {
         break;
       case SkysightRequest::Status::Complete:
       case SkysightRequest::Status::Error:
-        (*job)->Done();
-        request_queue.erase(job);
+        job->Done();
         break;
       case SkysightRequest::Status::Busy:
         break;
     }
   }
   
-  if(!empty(decode_queue)) {
-    auto &&decode_job = decode_queue.begin();
-     switch((*decode_job)->GetStatus()) {
+  if(!decode_queue.empty()) {
+    std::unique_ptr<CDFDecoder> decode_job = std::move(decode_queue.front());
+     switch(decode_job->GetStatus()) {
       case CDFDecoder::Status::Idle:
-        (*decode_job)->DecodeAsync();
+        decode_job->DecodeAsync();
         if(!Timer::IsActive())
           Timer::Schedule(std::chrono::milliseconds(300));
         break;
       case CDFDecoder::Status::Complete:
       case CDFDecoder::Status::Error:
-        (*decode_job)->Done();
-        decode_queue.erase(decode_job);
+        decode_job->Done();
+        decode_queue.pop();
         break;
       case CDFDecoder::Status::Busy:
         break;
@@ -109,7 +107,7 @@ void SkysightAPIQueue::Process() {
   }
 
 
-  if(empty(request_queue) && empty(decode_queue)) {
+  if(request_queue.empty() && decode_queue.empty()) {
     Timer::Cancel();
   }
   is_busy = false;
@@ -118,11 +116,12 @@ void SkysightAPIQueue::Process() {
 
 void SkysightAPIQueue::Clear(const tstring &&msg) {
   Timer::Cancel();
-  for(auto &&i = request_queue.begin(); i<request_queue.end();++i) {
-    if((*i)->GetStatus() != SkysightRequest::Status::Busy) {
-      (*i)->Done();
-      (*i)->TriggerNullCallback(msg.c_str());
-      request_queue.erase(i);
+  for(u_int i = 0; i < request_queue.size(); i++){
+    std::unique_ptr<SkysightAsyncRequest> job = std::move(request_queue.front());
+    if(job->GetStatus() != SkysightRequest::Status::Busy) {
+      job->Done();
+      job->TriggerNullCallback(msg.c_str());
+      request_queue.pop();
     }
   }
 }
