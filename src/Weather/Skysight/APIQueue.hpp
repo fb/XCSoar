@@ -27,11 +27,12 @@ Copyright_License {
 #include "CDFDecoder.hpp"
 #include "Metrics.hpp"
 #include "Event/Timer.hpp"
+#include <deque>
 #include <queue>
 
 
 class SkysightAPIQueue final : public Timer {
-  std::queue<std::unique_ptr<SkysightAsyncRequest>> request_queue;
+  std::deque<std::unique_ptr<SkysightAsyncRequest>> request_deque;
   std::queue<std::unique_ptr<CDFDecoder>> decode_queue;
   bool is_busy = false;
   
@@ -50,8 +51,8 @@ public:
   void SetCredentials(const tstring &&_email, const tstring &&_pass);
   void SetKey(const tstring &&_key, const uint64_t _key_expiry_time);
   bool IsLoggedIn();
-  void AddRequest(std::unique_ptr<SkysightAsyncRequest> &&request, bool append_end = true);
-  void AddDecodeJob(std::unique_ptr<CDFDecoder> &&job);
+  void AddRequest(std::unique_ptr<SkysightAsyncRequest> request, bool append_end = true);
+  void AddDecodeJob(std::unique_ptr<CDFDecoder> job);
   void Clear(const tstring &&msg);
   
 };
