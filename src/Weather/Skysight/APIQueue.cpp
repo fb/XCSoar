@@ -126,7 +126,7 @@ void SkysightAPIQueue::Clear(const tstring &&msg) {
   }
 }
 
-void SkysightAPIQueue::SetCredentials(const tstring &&_email, const tstring &&_pass) {
+void SkysightAPIQueue::SetCredentials(const tstring _email, const tstring _pass) {
   password = _pass;
   email = _email;
 }

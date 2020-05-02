@@ -48,7 +48,7 @@ public:
   SkysightAPIQueue() : Timer() {};
   ~SkysightAPIQueue();
   
-  void SetCredentials(const tstring &&_email, const tstring &&_pass);
+  void SetCredentials(const tstring _email, const tstring _pass);
   void SetKey(const tstring &&_key, const uint64_t _key_expiry_time);
   bool IsLoggedIn();
   void AddRequest(std::unique_ptr<SkysightAsyncRequest> request, bool append_end = true);
