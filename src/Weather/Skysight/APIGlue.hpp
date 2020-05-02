@@ -29,9 +29,9 @@ Copyright_License {
 
 
 typedef void (*SkysightCallback)(
-  const tstring &&details,
+  const tstring details,
   const bool  success, 
-  const tstring &&layer,
+  const tstring layer,
   const uint64_t time_index
 );
 

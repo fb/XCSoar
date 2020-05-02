@@ -337,8 +337,8 @@ void Skysight::Init() {
   CleanupFiles();
 }
 
-void Skysight::APIInited(const tstring &&details,  const bool success,  
-            const tstring &&layer_id,  const uint64_t time_index) {
+void Skysight::APIInited(const tstring details,  const bool success,  
+            const tstring layer_id,  const uint64_t time_index) {
   
   if(!self)
     return;
@@ -483,8 +483,8 @@ bool Skysight::SetDisplayedMetric(const TCHAR *const id, BrokenDateTime forecast
 }
 
 
-void Skysight::DownloadComplete(const tstring &&details,  const bool success,
-                const tstring &&layer_id,  const uint64_t time_index) {
+void Skysight::DownloadComplete(const tstring details,  const bool success,
+                const tstring layer_id,  const uint64_t time_index) {
 
   if(!self) return;
 

@@ -65,11 +65,11 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     tstring region = "EUROPE";
     DisplayedMetric displayed_metric;
     
-    static void DownloadComplete(const tstring &&details,  const bool success,  
-                const tstring &&layer_id,  const uint64_t time_index);
+    static void DownloadComplete(const tstring details,  const bool success,  
+                const tstring layer_id,  const uint64_t time_index);
     
-    static void APIInited(const tstring &&details,  const bool success,  
-                const tstring &&layer_id,  const uint64_t time_index);
+    static void APIInited(const tstring details,  const bool success,  
+                const tstring layer_id,  const uint64_t time_index);
 
     std::map<tstring, tstring> GetRegions() {
       return api.regions;
