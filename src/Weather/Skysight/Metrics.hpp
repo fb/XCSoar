@@ -50,9 +50,9 @@ public:
 
 struct SkysightActiveMetric {
   SkysightMetric *metric;
-  double from = 0;
-  double to = 0;
-  double mtime = 0;
+  uint64_t from = 0;
+  uint64_t to = 0;
+  uint64_t mtime = 0;
   bool updating = false;
   
 public:
