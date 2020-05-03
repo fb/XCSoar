@@ -61,7 +61,7 @@ public:
 class Skysight final : private NullBlackboardListener { //: public Timer {
   public:
     tstring region = "EUROPE";
-    SkysightDisplayedLayer displayed_layer;
+    unsigned displayed_layer = SKYSIGHT_MAX_STANDBY_LAYERS;
     
     static void DownloadComplete(const tstring details,  const bool success,  
                 const tstring layer_id,  const uint64_t time_index);
@@ -102,14 +102,14 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     bool SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m);
     void SetStandbyLayerUpdateState(const tstring id, bool state = false);
     void RefreshStandbyLayer(tstring id);
-    SkysightStandbyLayer GetStandbyLayer(int index);
+    SkysightStandbyLayer GetStandbyLayer(unsigned index);
     SkysightStandbyLayer *GetStandbyLayer(const tstring id);
-    int GetNumStandbyLayers();
+    unsigned GetNumStandbyLayers();
     bool StandbyLayersFull();
     bool IsStandbyLayer(const TCHAR *const id);
     int AddStandbyLayer(const TCHAR *const id);
     bool DownloadStandbyLayer(tstring id);
-    bool DisplayStandbyLayer(const TCHAR *const id = nullptr);
+    bool DisplayStandbyLayer(const unsigned index);
 
 
     static inline 
@@ -137,7 +137,7 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
   virtual void OnCalculatedUpdate(const MoreData &basic,
                                   const DerivedInfo &calculated) override;    
     
-    bool SetSkysightDisplayedLayer(const TCHAR *const id, BrokenDateTime forecast_time = BrokenDateTime());
+    bool SetSkysightDisplayedLayer(const unsigned index);
     BrokenDateTime GetForecastTime(BrokenDateTime curr_time);
     std::vector<SkysightStandbyLayer> standby_layers;
 

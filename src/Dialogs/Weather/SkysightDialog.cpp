@@ -92,26 +92,26 @@ void
 
 SkysightListItemRenderer::Draw(Canvas &canvas, const PixelRect rc, unsigned i) {
   const ComputerSettings &settings = CommonInterface::GetComputerSettings();
-  SkysightStandbyLayer m = SkysightStandbyLayer(skysight->GetStandbyLayer(i));
-
-  tstring first_row = tstring(m.descriptor->name);
-  if(skysight->displayed_layer == m.descriptor->id.c_str())
+  SkysightStandbyLayer standbyLayer = SkysightStandbyLayer(skysight->GetStandbyLayer(i));
+  tstring first_row = tstring(standbyLayer.descriptor->name);
+  
+  if(skysight->displayed_layer == i)
     first_row += " [ACTIVE]";
 
   StaticString<256> second_row;
 
-  if(m.updating) {
+  if(standbyLayer.updating) {
     second_row.Format("%s", _("Updating..."));
   } else {
-    if(!m.from || !m.to || !m.mtime) {
+    if(!standbyLayer.from || !standbyLayer.to || !standbyLayer.mtime) {
       second_row.Format("%s", _("No data. Press \"Update\" to update."));
     } else {
       
-      uint64_t elapsed = BrokenDateTime::NowUTC().ToUnixTimeUTC() - m.mtime;
+      uint64_t elapsed = BrokenDateTime::NowUTC().ToUnixTimeUTC() - standbyLayer.mtime;
 
       second_row.Format(_("_Data from %s to %s. Updated %s ago"), 
-                        FormatLocalTimeHHMM((int)m.from, settings.utc_offset).c_str(),
-                        FormatLocalTimeHHMM((int)m.to, settings.utc_offset).c_str(),
+                        FormatLocalTimeHHMM((int)standbyLayer.from, settings.utc_offset).c_str(),
+                        FormatLocalTimeHHMM((int)standbyLayer.to, settings.utc_offset).c_str(),
                         FormatTimespanSmart(elapsed).c_str());  
     }
   }
@@ -277,10 +277,9 @@ SkysightWidget::UpdateList()
   bool item_updating = false;
   bool item_active = false;
   
-  if((int)index < skysight->GetNumStandbyLayers()) {
-    SkysightStandbyLayer a = skysight->GetStandbyLayer(index);
-    item_updating = a.updating;
-    item_active = (skysight->displayed_layer == a.descriptor->id.c_str());
+  if(index < skysight->GetNumStandbyLayers()) {
+    item_updating = skysight->GetStandbyLayer(index).updating;
+    item_active = (skysight->displayed_layer == index);
   }
   
   bool any_updating = skysight->StandbyLayersUpdating();
@@ -379,9 +378,8 @@ SkysightWidget::ActivateClicked()
 {
   unsigned index = GetList().GetCursorIndex();
   assert(index < (unsigned)skysight->GetNumStandbyLayers());
-  
-  SkysightStandbyLayer a = skysight->GetStandbyLayer(index);  
-  if(!skysight->DisplayStandbyLayer(a.descriptor->id.c_str()))
+   
+  if(!skysight->DisplayStandbyLayer(index))
     ShowMessageBox(_("Couldn't display data. There is no forecast data available for this time."), _("Display Error"), MB_OK);
   UpdateList();
 }
@@ -392,7 +390,7 @@ SkysightWidget::DeactivateClicked()
   unsigned index = GetList().GetCursorIndex();
   assert(index < (unsigned)skysight->GetNumStandbyLayers());
 
-  skysight->DisplayStandbyLayer();
+  skysight->DisplayStandbyLayer(SKYSIGHT_MAX_STANDBY_LAYERS);
   UpdateList();
 }
 

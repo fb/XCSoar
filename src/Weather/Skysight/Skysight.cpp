@@ -142,13 +142,6 @@ SkysightImageFile::SkysightImageFile(Path _filename) {
   is_valid = true;
 }
 
-
-/*
- * ******   ACTIVE METRICS ************
- * 
- */
-
-
 bool Skysight::IsStandbyLayer(const TCHAR *const id) {
   for(auto &i : standby_layers)
     if(!i.descriptor->id.compare(id))
@@ -197,8 +190,8 @@ void Skysight::RefreshStandbyLayer(const tstring id) {
   }
 }
 
-SkysightStandbyLayer Skysight::GetStandbyLayer(int index) {
-  assert(index < (int)standby_layers.size());
+SkysightStandbyLayer Skysight::GetStandbyLayer(unsigned index) {
+  assert(index < standby_layers.size());
   auto &i = standby_layers.at(index);
   return i;
 }
@@ -236,8 +229,8 @@ bool Skysight::StandbyLayersUpdating() {
   return false;
 }
 
-int Skysight::GetNumStandbyLayers() {
-  return (int)standby_layers.size(); 
+unsigned Skysight::GetNumStandbyLayers() {
+  return standby_layers.size(); 
 }
 
 void Skysight::SaveStandbyLayers() {
@@ -272,16 +265,16 @@ void Skysight::LoadStandbyLayers() {
     am_list.erase(0, pos + 1);
   }
   AddStandbyLayer(am_list.c_str()); // last one
-
-  const TCHAR *const d = Profile::Get(ProfileKeys::SkysightSkysightDisplayedLayer);
-  if(d == NULL)
+  const TCHAR *const d = Profile::Get(ProfileKeys::SkysightDisplayedLayer);
+  if (d == NULL || *d != '\0')
     return;
 
-  if(!IsStandbyLayer(d))
+  const unsigned saved_displayed_layer = (unsigned)std::stoi(d);
+
+  if (saved_displayed_layer >= SKYSIGHT_MAX_STANDBY_LAYERS)
     return;
 
-  SetSkysightDisplayedLayer(d);
- 
+  SetSkysightDisplayedLayer(saved_displayed_layer);
 }
 
 
@@ -407,21 +400,21 @@ BrokenDateTime Skysight::FromUnixTime(uint64_t t) {
 }
 
 void Skysight::Render(bool force_update) {
+  if (displayed_layer >= SKYSIGHT_MAX_STANDBY_LAYERS)
+    return;
   
-  if(displayed_layer.descriptor) {
+  //TODO: Why use if(.descriptor?)
+  if(GetStandbyLayer(displayed_layer).descriptor) {
     LogFormat("In Render!");
-    //set by dl callback
     if(update_flag) {
-      //TODO: use const char in metric rather than string/cstr
-      DisplayStandbyLayer(displayed_layer.descriptor->id.c_str());
+      DisplayStandbyLayer(displayed_layer);
     }
 
     //Request next images
     BrokenDateTime now = Skysight::GetNow(force_update);
-    if(force_update || (!update_flag && displayed_layer < GetForecastTime(now))) {
+    if(force_update || (!update_flag && GetStandbyLayer(displayed_layer).to < (unsigned)GetForecastTime(now).ToUnixTimeUTC())) {
       force_update = false;
-      //TODO: use const char in metric rather than string/cstr
-      api.GetImageAt(displayed_layer.descriptor->id.c_str(), now, now + (60*60), DownloadComplete);
+      api.GetImageAt(GetStandbyLayer(displayed_layer).descriptor->id.c_str(), now, now + (60*60), DownloadComplete);
     }
   }
 }
@@ -447,13 +440,12 @@ BrokenDateTime Skysight::GetForecastTime(BrokenDateTime curr_time) {
   
   
 
-bool Skysight::SetSkysightDisplayedLayer(const TCHAR *const id, BrokenDateTime forecast_time) {
+bool Skysight::SetSkysightDisplayedLayer(const unsigned index) {
   
-  if(!IsStandbyLayer(id))
+  if(index >= SKYSIGHT_MAX_STANDBY_LAYERS)
     return false;
 
-  SkysightLayerDescriptor *m = api.GetLayer(id);
-  displayed_layer = SkysightDisplayedLayer(m, forecast_time);
+  displayed_layer = index;
 
   return true;
 }
@@ -467,9 +459,8 @@ void Skysight::DownloadComplete(const tstring details,  const bool success,
   self->SetStandbyLayerUpdateState(layer_id, false);
   self->RefreshStandbyLayer(layer_id);
 
-  if(success && (self->displayed_layer == layer_id.c_str()))
+  if(success && self->displayed_layer < self->GetNumStandbyLayers() && self->GetStandbyLayer(self->displayed_layer).descriptor->id.c_str() == layer_id.c_str())
     self->update_flag = true; 
-
 }
 
 
@@ -504,26 +495,22 @@ BrokenDateTime Skysight::GetNow(bool use_system_time) {
   return (curr_time.IsPlausible()) ? curr_time : BrokenDateTime::NowUTC();;
 }
 
-bool Skysight::DisplayStandbyLayer(const TCHAR *const id) {
+bool Skysight::DisplayStandbyLayer(const unsigned index) {
 
   update_flag = false;
     
-  if(!id) {
-    displayed_layer.clear();
+  if(index >= SKYSIGHT_MAX_STANDBY_LAYERS) {
+    displayed_layer = SKYSIGHT_MAX_STANDBY_LAYERS;
     auto *map = UIGlobals::GetMap();
     if (map == nullptr)
       return false;
 
     map->SetOverlay(nullptr);
-    Profile::Set(ProfileKeys::SkysightSkysightDisplayedLayer, "");
+    Profile::Set(ProfileKeys::SkysightDisplayedLayer, "");
     return true;
   }
-    
-  
-  if(!IsStandbyLayer(id))
-      return false;
 
-  Profile::Set(ProfileKeys::SkysightSkysightDisplayedLayer, id);
+  Profile::Set(ProfileKeys::SkysightDisplayedLayer, index);
 
   BrokenDateTime now = GetForecastTime(Skysight::GetNow());
   
@@ -541,12 +528,12 @@ bool Skysight::DisplayStandbyLayer(const TCHAR *const id) {
   
   while(!found) {
     //look back for closest forecast first, then look forward
-    for(int j=0; j<=1;++j) {
-      test_time = n + ( offset * ((2*j)-1) );
+    for(unsigned i = 0; i <= 1; i++) {
+      test_time = n + ( offset * ( (2 * i) - 1));
  
       bdt = FromUnixTime(test_time);
       filename.Format("%s-%s-%04u%02u%02u%02u%02u.tif", 
-            region.c_str(), id,
+            region.c_str(), GetStandbyLayer(index).descriptor->id.c_str(),
             bdt.year, bdt.month, 
             bdt.day, bdt.hour, bdt.minute);
                 
@@ -565,16 +552,19 @@ bool Skysight::DisplayStandbyLayer(const TCHAR *const id) {
   }
 
   if(!found) {
-    SetSkysightDisplayedLayer(id);
+    SetSkysightDisplayedLayer(index);
+    LogFormat("Not found with %s", GetStandbyLayer(index).descriptor->id.c_str());
     return false;
   }
   
-  if(!SetSkysightDisplayedLayer(id, bdt))
+  if(!SetSkysightDisplayedLayer(index)) {
+    LogFormat("SetSkysightDispokla false");
     return false;
+  }
 
   auto path = AllocatedPath::Build(Skysight::GetLocalPath(), filename.c_str());
   StaticString<256> desc;
-  desc.Format("Skysight: %s (%04u-%02u-%02u %02u:%02u)", displayed_layer.descriptor->name.c_str(), bdt.year, bdt.month, 
+  desc.Format("Skysight: %s (%04u-%02u-%02u %02u:%02u)", GetStandbyLayer(index).descriptor->name.c_str(), bdt.year, bdt.month, 
             bdt.day, bdt.hour, bdt.minute);
   tstring label = desc.c_str();
 

@@ -265,7 +265,7 @@ extern const char SkysightEmail[];
 extern const char SkysightPassword[];
 extern const char SkysightRegion[];
 extern const char SkysightStandbyLayers[];
-extern const char SkysightSkysightDisplayedLayer[];
+extern const char SkysightDisplayedLayer[];
 
 extern const char EnableLocationMapItem[];
 extern const char EnableArrivalAltitudeMapItem[];
