@@ -74,14 +74,13 @@ SkysightLayerDescriptor SkysightAPI::GetLayer(int index) {
  */
 SkysightLayerDescriptor *SkysightAPI::GetLayer(const tstring id) {
   
-  std::vector<SkysightLayerDescriptor>::iterator i;
-  for(i = descriptors.begin(); i < descriptors.end(); i++) {
+  auto i = descriptors.begin();
+  for(; i < descriptors.end(); i++) {
     if(!i->id.compare(id)) {
       assert(i < descriptors.end());
       return &(*i);
     }
   }
-
   return &(*i);
 }
 

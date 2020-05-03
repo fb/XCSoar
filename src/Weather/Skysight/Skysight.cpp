@@ -172,8 +172,8 @@ bool Skysight::StandbyLayersFull() {
 
 int Skysight::AddStandbyLayer(const TCHAR *const id) {
   bool descriptor_exists = false;
-  std::vector<SkysightLayerDescriptor>::iterator i;
-  for(i = api.descriptors.begin(); i < api.descriptors.end(); ++i)
+  auto i = api.descriptors.begin();
+  for(; i < api.descriptors.end(); ++i)
     if(!i->id.compare(id)) {
       descriptor_exists = true;
       break;
@@ -212,8 +212,8 @@ SkysightStandbyLayer Skysight::GetStandbyLayer(int index) {
 }
 
 SkysightStandbyLayer *Skysight::GetStandbyLayer(const tstring id) {
-  std::vector<SkysightStandbyLayer>::iterator i;
-  for(i = standby_layers.begin(); i<standby_layers.end();++i)
+  auto i = standby_layers.begin();
+  for(; i<standby_layers.end();++i)
     if(!i->descriptor->id.compare(id)) {
       return &(*i);
     }
@@ -230,8 +230,7 @@ void Skysight::SetStandbyLayerUpdateState(const tstring id, bool state) {
 }
 
 void Skysight::RemoveStandbyLayer(const tstring id) {
-  std::vector<SkysightStandbyLayer>::iterator i;
-  for(i = standby_layers.begin(); i<standby_layers.end(); ++i) {
+  for(auto i = standby_layers.begin(); i<standby_layers.end(); ++i) {
     if(i->descriptor->id == id)
       standby_layers.erase(i);
   }
