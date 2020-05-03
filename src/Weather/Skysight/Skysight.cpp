@@ -96,13 +96,6 @@ Skysight *Skysight::self;
 
 SkysightImageFile::SkysightImageFile(Path _filename) {
   filename = _filename;
-  fullpath = AllocatedPath::Build(Skysight::GetLocalPath(), filename);
-  SkysightImageFile(filename, fullpath);
-}
-
-SkysightImageFile::SkysightImageFile(Path _filename, Path _path) { 
-  filename = _filename;
-  fullpath = _path;
   region = tstring(_("INVALID"));
   layer = tstring(_("INVALID"));
   datetime = 0;
@@ -135,16 +128,15 @@ SkysightImageFile::SkysightImageFile(Path _filename, Path _path) {
   unsigned dd = stoi(dt.substr(6, 2));
   unsigned hh = stoi(dt.substr(8, 2));
   unsigned ii = stoi(dt.substr(10, 2));
-  
+
   BrokenDateTime d = BrokenDateTime(yy, mm, dd, hh, ii);
   if(!d.IsPlausible())
     return;
-  
+
   datetime = d.ToUnixTimeUTC();
-    
-  mtime = File::GetLastModification(fullpath);
-    
-    
+
+  mtime = File::GetLastModification( AllocatedPath::Build(MakeLocalPath(_T("skysight")), filename) );
+
   region = reg;
   layer = layer_tmp;
   is_valid = true;
@@ -373,11 +365,9 @@ std::vector<SkysightImageFile> Skysight::ScanFolder(tstring search_string = "*.t
     explicit SkysightFileVisitor(std::vector<SkysightImageFile> &_file_list) : file_list(_file_list) {}
 
     void Visit(Path path, Path filename) override {
-      //items.emplace_back(filename.c_str(), path);
-      
       //is this a tif filename
       if(filename.MatchesExtension(".tif")) {
-        SkysightImageFile img_file = SkysightImageFile(filename, path);
+        SkysightImageFile img_file = SkysightImageFile(filename);
         if (img_file.is_valid)
           file_list.emplace_back(img_file);
       }
@@ -397,7 +387,7 @@ void Skysight::CleanupFiles() {
     const uint64_t to;
     void Visit(Path path, Path filename) override {
       if(filename.MatchesExtension(".tif")) {
-        SkysightImageFile img_file = SkysightImageFile(filename, path);
+        SkysightImageFile img_file = SkysightImageFile(filename);
         if( (img_file.mtime <= (to - (60*60*24*5))) || 
                                             (img_file.datetime < (to - (60*60*24))) ) {
           File::Delete(path);

@@ -50,12 +50,10 @@ struct BrokenDateTime;
 struct SkysightImageFile {
 public:
   SkysightImageFile(Path _filename);
-  SkysightImageFile(Path _filename, Path _path);
-  Path fullpath;
-  Path filename;
-  tstring layer;
-  tstring region;
-  uint64_t datetime;
+  Path filename; //!< e.g. EUROPE-hwcrit-202005021300.tif
+  tstring layer; //!< e.g. hwcrit
+  tstring region; //!< e.g. EUROPE
+  uint64_t datetime; //!< e.g. 202005021300 converted to uint64_t
   bool is_valid;
   uint64_t mtime;
 };
