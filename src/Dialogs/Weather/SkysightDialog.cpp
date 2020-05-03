@@ -92,7 +92,7 @@ void
 
 SkysightListItemRenderer::Draw(Canvas &canvas, const PixelRect rc, unsigned i) {
   const ComputerSettings &settings = CommonInterface::GetComputerSettings();
-  SkysightActiveMetric m = SkysightActiveMetric(skysight->GetActiveMetric(i));
+  SkysightStandbyLayer m = SkysightStandbyLayer(skysight->GetActiveMetric(i));
 
   tstring first_row = tstring(m.metric->name);
   if(skysight->displayed_metric == m.metric->id.c_str())
@@ -125,19 +125,19 @@ SkysightListItemRenderer::Draw(Canvas &canvas, const PixelRect rc, unsigned i) {
  */
 
 
-class SkysightMetricsListItemRenderer : public ListItemRenderer {
+class SkysightLayersListItemRenderer : public ListItemRenderer {
   TextRowRenderer row_renderer;
   std::shared_ptr<Skysight> skysight;
 
 public:
-  SkysightMetricsListItemRenderer() : skysight(DataGlobals::GetSkysight()) {}
+  SkysightLayersListItemRenderer() : skysight(DataGlobals::GetSkysight()) {}
   
   unsigned CalculateLayout(const DialogLook &look) {
     return row_renderer.CalculateLayout(*look.list.font);
   }
 
   virtual void OnPaintItem(Canvas &canvas, const PixelRect rc, unsigned i) noexcept override {
-    row_renderer.DrawTextRow(canvas, rc, skysight->GetMetric(i).name.c_str());
+    row_renderer.DrawTextRow(canvas, rc, skysight->GetLayer(i).name.c_str());
   }
   
   static const TCHAR* HelpCallback(unsigned i) {
@@ -147,7 +147,7 @@ public:
     if(!skysight)
       return _("No description available.");
     
-    tstring helptext = skysight->GetMetric(i).desc;
+    tstring helptext = skysight->GetLayer(i).desc;
     TCHAR* help = new TCHAR[helptext.length() + 1];
     std::strcpy(help, helptext.c_str());
     return help;
@@ -275,7 +275,7 @@ SkysightWidget::UpdateList()
   bool item_active = false;
   
   if((int)index < skysight->NumActiveMetrics()) {
-    SkysightActiveMetric a = skysight->GetActiveMetric(index);
+    SkysightStandbyLayer a = skysight->GetActiveMetric(index);
     item_updating = a.updating;
     item_active = (skysight->displayed_metric == a.metric->id.c_str());
   }
@@ -287,7 +287,7 @@ SkysightWidget::UpdateList()
   list.SetLength(skysight->NumActiveMetrics());
   list.Invalidate();
 
-  add_button->SetEnabled(!skysight->ActiveMetricsFull());
+  add_button->SetEnabled(!skysight->StandbyLayersFull());
   remove_button->SetEnabled(!empty && !item_updating);
   update_button->SetEnabled(!empty && !item_updating);
   updateall_button->SetEnabled(!empty && !any_updating);
@@ -314,22 +314,22 @@ void SkysightWidget::AddClicked()
     return;
   }
 
-  SkysightMetricsListItemRenderer item_renderer;
+  SkysightLayersListItemRenderer item_renderer;
  
   int i = ListPicker(_("Choose a parameter"),
-                     skysight->NumMetrics(), 0,
+                     skysight->NumLayers(), 0,
                      item_renderer.CalculateLayout(UIGlobals::GetDialogLook()),
                      item_renderer,
                      false, /*timer */
                      nullptr, /*TCHAR help text */
-                     &SkysightMetricsListItemRenderer::HelpCallback,
+                     &SkysightLayersListItemRenderer::HelpCallback,
                      nullptr /*Extra caption*/);
 
   if (i < 0)
     return;
 
-  assert((int)i < skysight->NumMetrics());
-  skysight->AddActiveMetric(skysight->GetMetric(i).id.c_str());
+  assert((int)i < skysight->NumLayers());
+  skysight->AddStandbyLayer(skysight->GetLayer(i).id.c_str());
   
   UpdateList();
 }
@@ -339,7 +339,7 @@ void SkysightWidget::UpdateClicked()
   unsigned index = GetList().GetCursorIndex();
   assert(index < (unsigned)skysight->NumActiveMetrics());
   
-  SkysightActiveMetric a = skysight->GetActiveMetric(index);  
+  SkysightStandbyLayer a = skysight->GetActiveMetric(index);  
   if(!skysight->DownloadActiveMetric(a.metric->id))
     ShowMessageBox(_("Couldn't update data."), _("Update Error"), MB_OK);
   UpdateList();
@@ -359,7 +359,7 @@ void SkysightWidget::RemoveClicked()
   unsigned index = GetList().GetCursorIndex();
   assert(index < (unsigned)skysight->NumActiveMetrics());
   
-  SkysightActiveMetric a = skysight->GetActiveMetric(index);
+  SkysightStandbyLayer a = skysight->GetActiveMetric(index);
   StaticString<256> tmp;
   tmp.Format(_("Do you want to remove \"%s\"?"),
              a.metric->name.c_str());
@@ -379,7 +379,7 @@ SkysightWidget::ActivateClicked()
   unsigned index = GetList().GetCursorIndex();
   assert(index < (unsigned)skysight->NumActiveMetrics());
   
-  SkysightActiveMetric a = skysight->GetActiveMetric(index);  
+  SkysightStandbyLayer a = skysight->GetActiveMetric(index);  
   if(!skysight->DisplayActiveMetric(a.metric->id.c_str()))
     ShowMessageBox(_("Couldn't display data. There is no forecast data available for this time."), _("Display Error"), MB_OK);
   UpdateList();

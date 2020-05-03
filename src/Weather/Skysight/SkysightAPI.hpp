@@ -26,7 +26,7 @@ Copyright_License {
 #include "Request.hpp"
 #include "APIGlue.hpp"
 #include "APIQueue.hpp"
-#include "Metrics.hpp"
+#include "Layers.hpp"
 
 
 #include "Util/tstring.hpp"
@@ -68,12 +68,12 @@ public:
   
   
   std::map<tstring, tstring> regions;
-  std::vector<SkysightMetric> metrics;
-  SkysightMetric GetMetric(int index);
-  SkysightMetric GetMetric(const tstring id);
-  SkysightMetric *GetMetric(const TCHAR *const id);
-  bool MetricExists(const tstring id);
-  int NumMetrics();
+  std::vector<SkysightLayerDescriptor> descriptors;
+  SkysightLayerDescriptor GetLayer(int index);
+  SkysightLayerDescriptor GetLayer(const tstring id);
+  SkysightLayerDescriptor *GetLayer(const TCHAR *const id);
+  bool LayerExists(const tstring id);
+  int NumLayers();
 
 
   bool GetImageAt(const TCHAR *const layer, BrokenDateTime fctime, BrokenDateTime maxtime,

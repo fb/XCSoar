@@ -36,7 +36,7 @@ Copyright_License {
 #include "Thread/StandbyThread.hpp"
 #include "Event/Timer.hpp"
 
-#include "Weather/Skysight/Metrics.hpp"
+#include "Weather/Skysight/Layers.hpp"
 #include "Weather/Skysight/SkysightAPI.hpp"
 
 #include "Blackboard/BlackboardListener.hpp"
@@ -63,7 +63,7 @@ public:
 class Skysight final : private NullBlackboardListener { //: public Timer {
   public:
     tstring region = "EUROPE";
-    DisplayedMetric displayed_metric;
+    SkysightDisplayedLayer displayed_metric;
     
     static void DownloadComplete(const tstring details,  const bool success,  
                 const tstring layer_id,  const uint64_t time_index);
@@ -77,17 +77,17 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     tstring GetRegion() {
       return api.region;
     }
-    SkysightMetric GetMetric(int index) {
-      return api.GetMetric(index);
+    SkysightLayerDescriptor GetLayer(int index) {
+      return api.GetLayer(index);
     }
-    SkysightMetric GetMetric(const tstring id) {
-      return api.GetMetric(id);
+    SkysightLayerDescriptor GetLayer(const tstring id) {
+      return api.GetLayer(id);
     }
-    bool MetricExists(const tstring id) {
-      return api.MetricExists(id);
+    bool LayerExists(const tstring id) {
+      return api.LayerExists(id);
     }
-    int NumMetrics() {
-      return api.NumMetrics();
+    int NumLayers() {
+      return api.NumLayers();
     }
 
     Skysight();
@@ -102,15 +102,15 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     void RemoveActiveMetric(int index);
     void RemoveActiveMetric(const tstring id);
     bool ActiveMetricsUpdating();
-    bool GetActiveMetricState(tstring metric_name, SkysightActiveMetric &m);
+    bool SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m);
     void SetActveMetricUpdateState(const tstring id, bool state = false);
     void RefreshActiveMetric(tstring id);
-    SkysightActiveMetric GetActiveMetric(int index);
-    SkysightActiveMetric GetActiveMetric(const tstring id);
+    SkysightStandbyLayer GetActiveMetric(int index);
+    SkysightStandbyLayer GetActiveMetric(const tstring id);
     int NumActiveMetrics();
-    bool ActiveMetricsFull();
-    bool IsActiveMetric(const TCHAR *const id);
-    int AddActiveMetric(const TCHAR *const id);
+    bool StandbyLayersFull();
+    bool IsStandbyLayer(const TCHAR *const id);
+    int AddStandbyLayer(const TCHAR *const id);
     bool DownloadActiveMetric(tstring id);
     bool DisplayActiveMetric(const TCHAR *const id = nullptr);
 
@@ -140,9 +140,9 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
   virtual void OnCalculatedUpdate(const MoreData &basic,
                                   const DerivedInfo &calculated) override;    
     
-    bool SetDisplayedMetric(const TCHAR *const id, BrokenDateTime forecast_time = BrokenDateTime());
+    bool SetSkysightDisplayedLayer(const TCHAR *const id, BrokenDateTime forecast_time = BrokenDateTime());
     BrokenDateTime GetForecastTime(BrokenDateTime curr_time);
-    std::vector<SkysightActiveMetric> active_metrics;
+    std::vector<SkysightStandbyLayer> standby_layers;
 
     std::vector<SkysightImageFile>  ScanFolder(tstring search_pattern);
     void CleanupFiles();

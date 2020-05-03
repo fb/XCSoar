@@ -157,8 +157,8 @@ SkysightImageFile::SkysightImageFile(Path _filename, Path _path) {
  */
 
 
-bool Skysight::IsActiveMetric(const TCHAR *const id) {
-  for(auto &i : active_metrics)
+bool Skysight::IsStandbyLayer(const TCHAR *const id) {
+  for(auto &i : standby_layers)
     if(!i.metric->id.compare(id))
       return true;
 
@@ -166,71 +166,71 @@ bool Skysight::IsActiveMetric(const TCHAR *const id) {
 }
 
 
-bool Skysight::ActiveMetricsFull() {
-  return (active_metrics.size() >= SKYSIGHT_MAX_METRICS);
+bool Skysight::StandbyLayersFull() {
+  return (standby_layers.size() >= SKYSIGHT_MAX_METRICS);
 }
 
-int Skysight::AddActiveMetric(const TCHAR *const id) {
-  bool metric_exists = false;
-  std::vector<SkysightMetric>::iterator i;
-  for(i = api.metrics.begin(); i<api.metrics.end();++i)
+int Skysight::AddStandbyLayer(const TCHAR *const id) {
+  bool descriptor_exists = false;
+  std::vector<SkysightLayerDescriptor>::iterator i;
+  for(i = api.descriptors.begin(); i < api.descriptors.end(); ++i)
     if(!i->id.compare(id)) {
-      metric_exists = true;
+      descriptor_exists = true;
       break;
     }
-  if(!metric_exists)
+  if(!descriptor_exists)
     return -3;
   
  
-  if(IsActiveMetric(id))
+  if(IsStandbyLayer(id))
     return -1;
     
-  if(ActiveMetricsFull())
+  if(StandbyLayersFull())
     return -2;  
   
-  SkysightActiveMetric m = SkysightActiveMetric(&(*i), 0, 0, 0);
+  SkysightStandbyLayer m = SkysightStandbyLayer(&(*i), 0, 0, 0);
 
-  GetActiveMetricState(id, m);
+  SetupStandbyLayer(id, m);
     
-  active_metrics.push_back(m);
+  standby_layers.push_back(m);
   SaveActiveMetrics();
-  return active_metrics.size() - 1;
+  return standby_layers.size() - 1;
 }
 
 void Skysight::RefreshActiveMetric(tstring id) {
-  std::vector<SkysightActiveMetric>::iterator i;
-  for(i = active_metrics.begin(); i<active_metrics.end();++i) {
+  std::vector<SkysightStandbyLayer>::iterator i;
+  for(i = standby_layers.begin(); i<standby_layers.end();++i) {
     if(!i->metric->id.compare(id)) {
-      GetActiveMetricState(id, (*i));
+      SetupStandbyLayer(id, (*i));
     }
   }
 }
 
-SkysightActiveMetric Skysight::GetActiveMetric(int index) {
+SkysightStandbyLayer Skysight::GetActiveMetric(int index) {
 
-  assert(index < (int)active_metrics.size());
-  auto &i = active_metrics.at(index);
+  assert(index < (int)standby_layers.size());
+  auto &i = standby_layers.at(index);
   
   return i;
 
 }
 
 
-SkysightActiveMetric Skysight::GetActiveMetric(const tstring id) {
+SkysightStandbyLayer Skysight::GetActiveMetric(const tstring id) {
   
-  std::vector<SkysightActiveMetric>::iterator i;
-  for(i = active_metrics.begin(); i<active_metrics.end();++i)
+  std::vector<SkysightStandbyLayer>::iterator i;
+  for(i = standby_layers.begin(); i<standby_layers.end();++i)
     if(!i->metric->id.compare(id)) {
       return (*i);
     }
     
-  assert(i < active_metrics.end());
+  assert(i < standby_layers.end());
 
   return (*i);
 }
 
 void Skysight::SetActveMetricUpdateState(const tstring id, bool state) {
-  for(auto &i : active_metrics) {
+  for(auto &i : standby_layers) {
     if(!i.metric->id.compare(id)) {
      i.updating = state;
      return;
@@ -240,29 +240,29 @@ void Skysight::SetActveMetricUpdateState(const tstring id, bool state) {
 
 
 void Skysight::RemoveActiveMetric(int index) {
-  assert(index < (int)active_metrics.size());
-  active_metrics.erase(active_metrics.begin() + index);
+  assert(index < (int)standby_layers.size());
+  standby_layers.erase(standby_layers.begin() + index);
   SaveActiveMetrics();
 }
 
 void Skysight::RemoveActiveMetric(const tstring id) {
-  std::vector<SkysightActiveMetric>::iterator i;
-  for(i = active_metrics.begin(); i<active_metrics.end(); ++i) {
+  std::vector<SkysightStandbyLayer>::iterator i;
+  for(i = standby_layers.begin(); i<standby_layers.end(); ++i) {
     if(i->metric->id == id)
-      active_metrics.erase(i);
+      standby_layers.erase(i);
   }
   SaveActiveMetrics();
 }
 
 bool Skysight::ActiveMetricsUpdating() {
-  for(auto i : active_metrics)
+  for(auto i : standby_layers)
     if(i.updating) return true;
 
   return false;
 }
 
 int Skysight::NumActiveMetrics() {
-  return (int)active_metrics.size(); 
+  return (int)standby_layers.size(); 
 }
 
 void Skysight::SaveActiveMetrics() {
@@ -270,7 +270,7 @@ void Skysight::SaveActiveMetrics() {
   tstring am_list;
   
   if(NumActiveMetrics()) {
-    for(auto &i : active_metrics) {
+    for(auto &i : standby_layers) {
       am_list += i.metric->id;
       am_list += ",";
     }
@@ -279,33 +279,33 @@ void Skysight::SaveActiveMetrics() {
     am_list = "";
   }
   
-  Profile::Set(ProfileKeys::SkysightActiveMetrics, am_list.c_str());
+  Profile::Set(ProfileKeys::SkysightStandbyLayers, am_list.c_str());
   
 }
 
 void Skysight::LoadActiveMetrics() {
   
-  active_metrics.clear();
+  standby_layers.clear();
   
-  const char *s = Profile::Get(ProfileKeys::SkysightActiveMetrics);
+  const char *s = Profile::Get(ProfileKeys::SkysightStandbyLayers);
   if(s == NULL)
     return;
   tstring am_list = tstring(s);
   size_t pos;
   while ((pos = am_list.find(",")) != tstring::npos) {
-    AddActiveMetric(am_list.substr(0, pos).c_str());
+    AddStandbyLayer(am_list.substr(0, pos).c_str());
     am_list.erase(0, pos + 1);
   }
-  AddActiveMetric(am_list.c_str()); // last one
+  AddStandbyLayer(am_list.c_str()); // last one
 
-  const TCHAR *const d = Profile::Get(ProfileKeys::SkysightDisplayedMetric);
+  const TCHAR *const d = Profile::Get(ProfileKeys::SkysightSkysightDisplayedLayer);
   if(d == NULL)
     return;
 
-  if(!IsActiveMetric(d))
+  if(!IsStandbyLayer(d))
     return;
 
-  SetDisplayedMetric(d);
+  SetSkysightDisplayedLayer(d);
  
 }
 
@@ -315,7 +315,7 @@ bool Skysight::IsReady(bool force_update)
   if(email.empty() || password.empty() || region.empty())
     return false;
 
-  return (NumMetrics() > 0);
+  return (NumLayers() > 0);
 }
 
 
@@ -343,15 +343,18 @@ void Skysight::APIInited(const tstring details,  const bool success,
   if(!self)
     return;
   
-  if(self->api.metrics.size()) {
+  if(self->api.descriptors.size()) {
     self->LoadActiveMetrics();
     self->Render(true);
   }
 }
 
-bool Skysight::GetActiveMetricState(tstring metric_name, SkysightActiveMetric &m) {
+/** Sets up the given standbyLayer m and returns true or, if the layer_name is not found, returns false
+ * 
+ */
+bool Skysight::SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m) {
   
-  tstring search_pattern = region + "-" + metric_name + "*";
+  tstring search_pattern = region + "-" + layer_name + "*";
   std::vector<SkysightImageFile> img_files = ScanFolder(search_pattern);
   
   if(img_files.size() > 0) {
@@ -364,8 +367,8 @@ bool Skysight::GetActiveMetricState(tstring metric_name, SkysightActiveMetric &m
       max_date = std::max(max_date, i.datetime);
       updated  = std::max(updated, i.mtime);
     }
-    if(MetricExists(metric_name)) {
-      m.metric =new SkysightMetric(GetMetric(metric_name));
+    if(LayerExists(layer_name)) {
+      m.metric =new SkysightLayerDescriptor(GetLayer(layer_name));
       m.from = min_date;
       m.to = max_date;
       m.mtime = updated;
@@ -432,12 +435,12 @@ BrokenDateTime Skysight::FromUnixTime(uint64_t t) {
 
 void Skysight::Render(bool force_update) {
   
-  if(displayed_metric.metric) {
+  if(displayed_metric.descriptor) {
     LogFormat("In Render!");
     //set by dl callback
     if(update_flag) {
       //TODO: use const char in metric rather than string/cstr
-      DisplayActiveMetric(displayed_metric.metric->id.c_str());
+      DisplayActiveMetric(displayed_metric.descriptor->id.c_str());
     }
 
     //Request next images
@@ -445,7 +448,7 @@ void Skysight::Render(bool force_update) {
     if(force_update || (!update_flag && displayed_metric < GetForecastTime(now))) {
       force_update = false;
       //TODO: use const char in metric rather than string/cstr
-      api.GetImageAt(displayed_metric.metric->id.c_str(), now, now + (60*60), DownloadComplete);
+      api.GetImageAt(displayed_metric.descriptor->id.c_str(), now, now + (60*60), DownloadComplete);
     }
   }
 }
@@ -471,13 +474,13 @@ BrokenDateTime Skysight::GetForecastTime(BrokenDateTime curr_time) {
   
   
 
-bool Skysight::SetDisplayedMetric(const TCHAR *const id, BrokenDateTime forecast_time) {
+bool Skysight::SetSkysightDisplayedLayer(const TCHAR *const id, BrokenDateTime forecast_time) {
   
-  if(!IsActiveMetric(id))
+  if(!IsStandbyLayer(id))
     return false;
 
-  SkysightMetric *m = api.GetMetric(id);
-  displayed_metric = DisplayedMetric(m, forecast_time);
+  SkysightLayerDescriptor *m = api.GetLayer(id);
+  displayed_metric = SkysightDisplayedLayer(m, forecast_time);
 
   return true;
 }
@@ -501,7 +504,7 @@ bool Skysight::DownloadActiveMetric(tstring id = "*") {
 
   BrokenDateTime now = Skysight::GetNow();
   if(id == "*") {
-    for(auto &i : active_metrics) {
+    for(auto &i : standby_layers) {
       SetActveMetricUpdateState(i.metric->id, true);
       api.GetImageAt(i.metric->id.c_str(),  now, now + 60*60*24,  DownloadComplete);
     }
@@ -539,15 +542,15 @@ bool Skysight::DisplayActiveMetric(const TCHAR *const id) {
       return false;
 
     map->SetOverlay(nullptr);
-    Profile::Set(ProfileKeys::SkysightDisplayedMetric, "");
+    Profile::Set(ProfileKeys::SkysightSkysightDisplayedLayer, "");
     return true;
   }
     
   
-  if(!IsActiveMetric(id))
+  if(!IsStandbyLayer(id))
       return false;
 
-  Profile::Set(ProfileKeys::SkysightDisplayedMetric, id);
+  Profile::Set(ProfileKeys::SkysightSkysightDisplayedLayer, id);
 
   BrokenDateTime now = GetForecastTime(Skysight::GetNow());
   
@@ -589,16 +592,16 @@ bool Skysight::DisplayActiveMetric(const TCHAR *const id) {
   }
 
   if(!found) {
-    SetDisplayedMetric(id);
+    SetSkysightDisplayedLayer(id);
     return false;
   }
   
-  if(!SetDisplayedMetric(id, bdt))
+  if(!SetSkysightDisplayedLayer(id, bdt))
     return false;
 
   auto path = AllocatedPath::Build(Skysight::GetLocalPath(), filename.c_str());
   StaticString<256> desc;
-  desc.Format("Skysight: %s (%04u-%02u-%02u %02u:%02u)", displayed_metric.metric->name.c_str(), bdt.year, bdt.month, 
+  desc.Format("Skysight: %s (%04u-%02u-%02u %02u:%02u)", displayed_metric.descriptor->name.c_str(), bdt.year, bdt.month, 
             bdt.day, bdt.hour, bdt.minute);
   tstring label = desc.c_str();
 

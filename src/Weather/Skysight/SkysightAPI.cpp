@@ -45,7 +45,7 @@ Copyright_License {
 #include "IO/FileLineReader.hpp"
 
 #include "Time/BrokenDateTime.hpp"
-#include "Metrics.hpp"
+#include "Layers.hpp"
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -61,35 +61,42 @@ SkysightAPI::~SkysightAPI() {
   Timer::Cancel();
 }
 
-SkysightMetric SkysightAPI::GetMetric(int index) {
+SkysightLayerDescriptor SkysightAPI::GetLayer(int index) {
 
-  assert(index < (int)metrics.size());
-  auto &i = metrics.at(index);
-  
+  assert(index < (int)descriptors.size());
+  auto &i = descriptors.at(index);
   return i;
 
 }
 
-SkysightMetric SkysightAPI::GetMetric(const tstring id) {
+/** Returns layer descriptor with given id
+ * 
+ */
+SkysightLayerDescriptor SkysightAPI::GetLayer(const tstring id) {
   
-  std::vector<SkysightMetric>::iterator i;
-  for(i = metrics.begin(); i<metrics.end();++i) {
+  std::vector<SkysightLayerDescriptor>::iterator i;
+  for(i = descriptors.begin(); i < descriptors.end(); i++) {
     if(!i->id.compare(id)) {
-      assert(i < metrics.end());
-      return (*i);
+      assert(i < descriptors.end());
+      return *i;
     }
   }
 
-  return (*i);
+  return *i;
 }
 
 //TODO: Use auto ptr, use TCHAR for all, try to whittle down to pointer only ver
+//TODO: Remove copy pasta, layerExists is redundant
+//TODO: Write GetLayer method for returning a pointer (If the container is empty, the returned iterator value shall not be dereferenced.)
 
-SkysightMetric *SkysightAPI::GetMetric(const TCHAR *const id) {
+/** Returns layer descriptor with given id
+ * 
+ */
+SkysightLayerDescriptor *SkysightAPI::GetLayer(const TCHAR *const id) {
   
  bool metric_exists = false;
-  std::vector<SkysightMetric>::iterator i;
-  for(i = metrics.begin(); i<metrics.end();++i)
+  std::vector<SkysightLayerDescriptor>::iterator i;
+  for(i = descriptors.begin(); i < descriptors.end(); i++)
     if(!i->id.compare(id)) {
       metric_exists = true;
       break;
@@ -99,10 +106,12 @@ SkysightMetric *SkysightAPI::GetMetric(const TCHAR *const id) {
   return &(*i);
 }
 
-bool SkysightAPI::MetricExists(const tstring id) {
-
-  std::vector<SkysightMetric>::iterator i;
-  for(i = metrics.begin(); i<metrics.end();++i)
+/** Checks if layer with given id exists as a layer descriptor
+ * 
+ */
+bool SkysightAPI::LayerExists(const tstring id) {
+  std::vector<SkysightLayerDescriptor>::iterator i;
+  for(i = descriptors.begin(); i < descriptors.end(); i++)
     if(!i->id.compare(id)) {
       return true;
     }
@@ -110,8 +119,8 @@ bool SkysightAPI::MetricExists(const tstring id) {
 }
 
 
-int SkysightAPI::NumMetrics() {
-  return (int)metrics.size(); 
+int SkysightAPI::NumLayers() {
+  return (int)descriptors.size(); 
 }
 
 const tstring SkysightAPI::GetUrl(SkysightCallType type, const char *const layer, const uint64_t from) {
@@ -324,7 +333,7 @@ bool SkysightAPI::ParseLayers(const SkysightRequestArgs &args, const tstring &re
     return false;
   }
 
-  metrics.clear();
+  descriptors.clear();
   bool success = false;
 
   for(auto &i : details) {
@@ -332,7 +341,7 @@ bool SkysightAPI::ParseLayers(const SkysightRequestArgs &args, const tstring &re
     auto id = node.find("id");
     auto legend = node.find("legend");
     if(id != node.not_found() && legend != node.not_found()) {
-      SkysightMetric m = SkysightMetric(
+      SkysightLayerDescriptor m = SkysightLayerDescriptor(
         tstring(id->second.data()), 
         tstring(node.find("name")->second.data()),
         tstring(node.find("description")->second.data())
@@ -352,7 +361,7 @@ bool SkysightAPI::ParseLayers(const SkysightRequestArgs &args, const tstring &re
             }
           ));
         }
-        metrics.push_back(m);
+        descriptors.push_back(m);
       }
     }
   }
@@ -382,7 +391,7 @@ bool SkysightAPI::ParseLastUpdates(const SkysightRequestArgs &args, const tstrin
   }
 
   bool success = false;
-  for(auto &i : metrics) {
+  for(auto &i : descriptors) {
     for(auto &j : details) {
       auto id = j.second.find("layer_id");
       auto time = j.second.find("time");
@@ -464,7 +473,7 @@ bool SkysightAPI::ParseData(const SkysightRequestArgs &args, const tstring &resu
   
   queue.AddDecodeJob(std::make_unique<CDFDecoder>(args.path.c_str(), output_img.c_str(),
                                           args.layer.c_str(), args.from, 
-                                          GetMetric(args.layer.c_str())->legend, args.cb));
+                                          GetLayer(args.layer.c_str())->legend, args.cb));
   
   return true;
 }
@@ -517,7 +526,7 @@ bool SkysightAPI::CacheAvailable(Path path, SkysightCallType calltype, const TCH
 
   uint64_t layer_updated = 0;
   if(layer) {
-    SkysightMetric *m = GetMetric(layer);
+    SkysightLayerDescriptor *m = GetLayer(layer);
     layer_updated = m->last_update;
   }
   
@@ -632,7 +641,7 @@ void SkysightAPI::OnTimer() {
     GetData(SkysightCallType::Layers, nullptr, true);
   
   //refresh last update times if > 5h (update freq is usually 5 hours)
-  for(auto &m : metrics) {
+  for(auto &m : descriptors) {
     if((m.last_update + 18000) < now) {
       GetData(SkysightCallType::LastUpdates);
       break;

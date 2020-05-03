@@ -21,8 +21,8 @@ Copyright_License {
 }
 */
 
-#ifndef WEATHER_SKYSIGHT_METRICS_HPP
-#define WEATHER_SKYSIGHT_METRICS_HPP
+#ifndef WEATHER_SKYSIGHT_LAYERS_HPP
+#define WEATHER_SKYSIGHT_LAYERS_HPP
 
 #include "Util/tstring.hpp"
 #include "Time/BrokenDateTime.hpp"
@@ -34,7 +34,7 @@ struct LegendColor {
   unsigned char Blue;
 };
 
-struct SkysightMetric {
+struct SkysightLayerDescriptor {
   const tstring id;
   const tstring name;
   const tstring desc;
@@ -43,45 +43,45 @@ struct SkysightMetric {
  // std::map<uint64_t, tstring> datafiles;
 
 public:
-  SkysightMetric(tstring _id, tstring _name, tstring _desc) : id(_id), name(_name), desc(_desc) {}
-  SkysightMetric(const SkysightMetric &m) : id(m.id), name(m.name), desc(m.desc), last_update(m.last_update), legend(m.legend) {}
+  SkysightLayerDescriptor(tstring _id, tstring _name, tstring _desc) : id(_id), name(_name), desc(_desc) {}
+  SkysightLayerDescriptor(const SkysightLayerDescriptor &descriptor) : id(descriptor.id), name(descriptor.name), desc(descriptor.desc), last_update(descriptor.last_update), legend(descriptor.legend) {}
 };
 
 
-struct SkysightActiveMetric {
-  SkysightMetric *metric;
+struct SkysightStandbyLayer {
+  SkysightLayerDescriptor *metric;
   uint64_t from = 0;
   uint64_t to = 0;
   uint64_t mtime = 0;
   bool updating = false;
   
 public:
-  SkysightActiveMetric(SkysightMetric *_metric, uint64_t _from, uint64_t _to, uint64_t _mtime) : 
-                                        metric(_metric), from(_from), to(_to), mtime(_mtime) {}
-  SkysightActiveMetric(const SkysightActiveMetric &m) : metric(m.metric), from(m.from), 
-to(m.to), mtime(m.mtime), updating(m.updating) {}
+  SkysightStandbyLayer(SkysightLayerDescriptor *descriptor, uint64_t _from, uint64_t _to, uint64_t _mtime) : 
+                                        metric(descriptor), from(_from), to(_to), mtime(_mtime) {}
+  SkysightStandbyLayer(const SkysightStandbyLayer &layer) : metric(layer.metric), from(layer.from), 
+to(layer.to), mtime(layer.mtime), updating(layer.updating) {}
 };
 
-struct DisplayedMetric {
-  SkysightMetric *metric;
+struct SkysightDisplayedLayer {
+  SkysightLayerDescriptor *descriptor;
   BrokenDateTime forecast_index;
-  DisplayedMetric() {
-    metric = nullptr;
+  SkysightDisplayedLayer() {
+    descriptor = nullptr;
   };
-  DisplayedMetric(SkysightMetric *_metric, BrokenDateTime _fc_index) : metric(_metric),
+  SkysightDisplayedLayer(SkysightLayerDescriptor *descriptor, BrokenDateTime _fc_index) : descriptor(descriptor),
                                                                   forecast_index(_fc_index) {};
   void clear() {
-    metric = nullptr;
+    descriptor = nullptr;
   }
-  bool operator==(const DisplayedMetric &d) {
-    return (*this == d.metric->id.c_str());
+  bool operator==(const SkysightDisplayedLayer &layer) {
+    return (*this == layer.descriptor->id.c_str());
   };
 
   bool operator==(const TCHAR *const id) {
-    if(!metric || !id)
+    if(!descriptor || !id)
       return false;
 
-    return (metric->id.compare(id) == 0);
+    return (descriptor->id.compare(id) == 0);
   };
 
   bool operator==(const BrokenDateTime &t) {
