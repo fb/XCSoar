@@ -340,17 +340,13 @@ void SkysightWidget::UpdateClicked()
 {
   unsigned index = GetList().GetCursorIndex();
   assert(index < (unsigned)skysight->GetNumStandbyLayers());
-  
-  SkysightStandbyLayer a = skysight->GetStandbyLayer(index);  
-  if(!skysight->DownloadStandbyLayer(a.descriptor->id))
-    ShowMessageBox(_("Couldn't update data."), _("Update Error"), MB_OK);
+  skysight->DownloadStandbyLayer(index);
   UpdateList();
 }
 
 void SkysightWidget::UpdateAllClicked()
 {
-  if(!skysight->DownloadStandbyLayer("*"))
-    ShowMessageBox(_("Couldn't update data."), _("Update Error"), MB_OK);
+  skysight->DownloadStandbyLayer(SKYSIGHT_MAX_STANDBY_LAYERS);
   UpdateList();
 }
  

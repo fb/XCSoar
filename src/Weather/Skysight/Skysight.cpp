@@ -205,15 +205,6 @@ SkysightStandbyLayer *Skysight::GetStandbyLayer(const tstring id) {
   return &(*i);
 }
 
-void Skysight::SetStandbyLayerUpdateState(const tstring id, bool state) {
-  for(auto &i : standby_layers) {
-    if(!i.descriptor->id.compare(id)) {
-     i.updating = state;
-     return;
-    }
-  }
-}
-
 void Skysight::RemoveStandbyLayer(const tstring id) {
   for(auto i = standby_layers.begin(); i<standby_layers.end(); ++i) {
     if(i->descriptor->id == id)
@@ -455,8 +446,7 @@ void Skysight::DownloadComplete(const tstring details,  const bool success,
                 const tstring layer_id,  const uint64_t time_index) {
 
   if(!self) return;
-
-  self->SetStandbyLayerUpdateState(layer_id, false);
+  self->GetStandbyLayer(layer_id)->updating = false;
   self->RefreshStandbyLayer(layer_id);
 
   if(success && self->displayed_layer < self->GetNumStandbyLayers() && self->GetStandbyLayer(self->displayed_layer).descriptor->id.c_str() == layer_id.c_str())
@@ -464,20 +454,15 @@ void Skysight::DownloadComplete(const tstring details,  const bool success,
 }
 
 
-bool Skysight::DownloadStandbyLayer(tstring id = "*") {
+void Skysight::DownloadStandbyLayer(const unsigned index) {
 
   BrokenDateTime now = Skysight::GetNow();
-  if(id == "*") {
-    for(auto &i : standby_layers) {
-      SetStandbyLayerUpdateState(i.descriptor->id, true);
-      api.GetImageAt(i.descriptor->id.c_str(),  now, now + 60*60*24,  DownloadComplete);
+  for(unsigned i = 0; i < GetNumStandbyLayers(); i++) {
+    if(index == SKYSIGHT_MAX_STANDBY_LAYERS || index == i){
+      standby_layers[i].updating = true;
+      api.GetImageAt(standby_layers[i].descriptor->id.c_str(),  now, now + 60*60*24,  DownloadComplete);
     }
-  } else {
-    SetStandbyLayerUpdateState(id, true);
-    api.GetImageAt(id.c_str(),  now, now + 60*60*24,  DownloadComplete);
   }
-
-  return true;
 }
 
 void Skysight::OnCalculatedUpdate(const MoreData &basic,

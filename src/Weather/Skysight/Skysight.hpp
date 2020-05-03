@@ -100,7 +100,6 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     void RemoveStandbyLayer(const tstring id);
     bool StandbyLayersUpdating();
     bool SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m);
-    void SetStandbyLayerUpdateState(const tstring id, bool state = false);
     void RefreshStandbyLayer(tstring id);
     SkysightStandbyLayer GetStandbyLayer(unsigned index);
     SkysightStandbyLayer *GetStandbyLayer(const tstring id);
@@ -108,7 +107,7 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     bool StandbyLayersFull();
     bool IsStandbyLayer(const TCHAR *const id);
     int AddStandbyLayer(const TCHAR *const id);
-    bool DownloadStandbyLayer(tstring id);
+    void DownloadStandbyLayer(const unsigned index);
     bool DisplayStandbyLayer(const unsigned index);
 
 
