@@ -368,7 +368,7 @@ bool Skysight::SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m) {
       updated  = std::max(updated, i.mtime);
     }
     if(LayerExists(layer_name)) {
-      m.metric =new SkysightLayerDescriptor(GetLayer(layer_name));
+      m.metric =new SkysightLayerDescriptor(*GetLayer(layer_name));
       m.from = min_date;
       m.to = max_date;
       m.mtime = updated;

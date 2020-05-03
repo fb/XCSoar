@@ -70,8 +70,7 @@ public:
   std::map<tstring, tstring> regions;
   std::vector<SkysightLayerDescriptor> descriptors;
   SkysightLayerDescriptor GetLayer(int index);
-  SkysightLayerDescriptor GetLayer(const tstring id);
-  SkysightLayerDescriptor *GetLayer(const TCHAR *const id);
+  SkysightLayerDescriptor *GetLayer(const tstring id);
   bool LayerExists(const tstring id);
   int NumLayers();
 

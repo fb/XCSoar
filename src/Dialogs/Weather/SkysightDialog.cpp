@@ -136,6 +136,9 @@ public:
     return row_renderer.CalculateLayout(*look.list.font);
   }
 
+  /** Draws a row with a specific index i
+   * 
+   */
   virtual void OnPaintItem(Canvas &canvas, const PixelRect rc, unsigned i) noexcept override {
     row_renderer.DrawTextRow(canvas, rc, skysight->GetLayer(i).name.c_str());
   }

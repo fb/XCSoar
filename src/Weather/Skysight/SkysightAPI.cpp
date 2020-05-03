@@ -72,50 +72,26 @@ SkysightLayerDescriptor SkysightAPI::GetLayer(int index) {
 /** Returns layer descriptor with given id
  * 
  */
-SkysightLayerDescriptor SkysightAPI::GetLayer(const tstring id) {
+SkysightLayerDescriptor *SkysightAPI::GetLayer(const tstring id) {
   
   std::vector<SkysightLayerDescriptor>::iterator i;
   for(i = descriptors.begin(); i < descriptors.end(); i++) {
     if(!i->id.compare(id)) {
       assert(i < descriptors.end());
-      return *i;
+      return &(*i);
     }
   }
 
-  return *i;
+  return &(*i);
 }
 
 //TODO: Use auto ptr, use TCHAR for all, try to whittle down to pointer only ver
-//TODO: Remove copy pasta, layerExists is redundant
-//TODO: Write GetLayer method for returning a pointer (If the container is empty, the returned iterator value shall not be dereferenced.)
-
-/** Returns layer descriptor with given id
- * 
- */
-SkysightLayerDescriptor *SkysightAPI::GetLayer(const TCHAR *const id) {
-  
- bool metric_exists = false;
-  std::vector<SkysightLayerDescriptor>::iterator i;
-  for(i = descriptors.begin(); i < descriptors.end(); i++)
-    if(!i->id.compare(id)) {
-      metric_exists = true;
-      break;
-    }
-  assert(metric_exists);
-  
-  return &(*i);
-}
 
 /** Checks if layer with given id exists as a layer descriptor
  * 
  */
 bool SkysightAPI::LayerExists(const tstring id) {
-  std::vector<SkysightLayerDescriptor>::iterator i;
-  for(i = descriptors.begin(); i < descriptors.end(); i++)
-    if(!i->id.compare(id)) {
-      return true;
-    }
-  return false;
+  return GetLayer(id) != NULL;
 }
 
 
