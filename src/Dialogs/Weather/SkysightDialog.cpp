@@ -92,10 +92,10 @@ void
 
 SkysightListItemRenderer::Draw(Canvas &canvas, const PixelRect rc, unsigned i) {
   const ComputerSettings &settings = CommonInterface::GetComputerSettings();
-  SkysightStandbyLayer m = SkysightStandbyLayer(skysight->GetActiveMetric(i));
+  SkysightStandbyLayer m = SkysightStandbyLayer(skysight->GetStandbyLayer(i));
 
-  tstring first_row = tstring(m.metric->name);
-  if(skysight->displayed_metric == m.metric->id.c_str())
+  tstring first_row = tstring(m.descriptor->name);
+  if(skysight->displayed_layer == m.descriptor->id.c_str())
     first_row += " [ACTIVE]";
 
   StaticString<256> second_row;
@@ -277,17 +277,17 @@ SkysightWidget::UpdateList()
   bool item_updating = false;
   bool item_active = false;
   
-  if((int)index < skysight->NumActiveMetrics()) {
-    SkysightStandbyLayer a = skysight->GetActiveMetric(index);
+  if((int)index < skysight->GetNumStandbyLayers()) {
+    SkysightStandbyLayer a = skysight->GetStandbyLayer(index);
     item_updating = a.updating;
-    item_active = (skysight->displayed_metric == a.metric->id.c_str());
+    item_active = (skysight->displayed_layer == a.descriptor->id.c_str());
   }
   
-  bool any_updating = skysight->ActiveMetricsUpdating();
-  bool empty = (!(bool)skysight->NumActiveMetrics());
+  bool any_updating = skysight->StandbyLayersUpdating();
+  bool empty = (!(bool)skysight->GetNumStandbyLayers());
 
   ListControl &list = GetList();
-  list.SetLength(skysight->NumActiveMetrics());
+  list.SetLength(skysight->GetNumStandbyLayers());
   list.Invalidate();
 
   add_button->SetEnabled(!skysight->StandbyLayersFull());
@@ -320,7 +320,7 @@ void SkysightWidget::AddClicked()
   SkysightLayersListItemRenderer item_renderer;
  
   int i = ListPicker(_("Choose a parameter"),
-                     skysight->NumLayers(), 0,
+                     skysight->GetNumLayerDescriptors(), 0,
                      item_renderer.CalculateLayout(UIGlobals::GetDialogLook()),
                      item_renderer,
                      false, /*timer */
@@ -331,7 +331,7 @@ void SkysightWidget::AddClicked()
   if (i < 0)
     return;
 
-  assert((int)i < skysight->NumLayers());
+  assert((int)i < skysight->GetNumLayerDescriptors());
   skysight->AddStandbyLayer(skysight->GetLayer(i).id.c_str());
   
   UpdateList();
@@ -340,17 +340,17 @@ void SkysightWidget::AddClicked()
 void SkysightWidget::UpdateClicked()
 {
   unsigned index = GetList().GetCursorIndex();
-  assert(index < (unsigned)skysight->NumActiveMetrics());
+  assert(index < (unsigned)skysight->GetNumStandbyLayers());
   
-  SkysightStandbyLayer a = skysight->GetActiveMetric(index);  
-  if(!skysight->DownloadActiveMetric(a.metric->id))
+  SkysightStandbyLayer a = skysight->GetStandbyLayer(index);  
+  if(!skysight->DownloadStandbyLayer(a.descriptor->id))
     ShowMessageBox(_("Couldn't update data."), _("Update Error"), MB_OK);
   UpdateList();
 }
 
 void SkysightWidget::UpdateAllClicked()
 {
-  if(!skysight->DownloadActiveMetric("*"))
+  if(!skysight->DownloadStandbyLayer("*"))
     ShowMessageBox(_("Couldn't update data."), _("Update Error"), MB_OK);
   UpdateList();
 }
@@ -358,19 +358,17 @@ void SkysightWidget::UpdateAllClicked()
 
 void SkysightWidget::RemoveClicked()
 {
-  
   unsigned index = GetList().GetCursorIndex();
-  assert(index < (unsigned)skysight->NumActiveMetrics());
-  
-  SkysightStandbyLayer a = skysight->GetActiveMetric(index);
+  assert(index < (unsigned)skysight->GetNumStandbyLayers());
+  SkysightStandbyLayer a = skysight->GetStandbyLayer(index);
   StaticString<256> tmp;
   tmp.Format(_("Do you want to remove \"%s\"?"),
-             a.metric->name.c_str());
+             a.descriptor->name.c_str());
 
   if (ShowMessageBox(tmp, _("Remove"), MB_YESNO) == IDNO)
     return;
 
-  skysight->RemoveActiveMetric(a.metric->id);
+  skysight->RemoveStandbyLayer(a.descriptor->id);
 
   UpdateList();
 
@@ -380,10 +378,10 @@ inline void
 SkysightWidget::ActivateClicked()
 {
   unsigned index = GetList().GetCursorIndex();
-  assert(index < (unsigned)skysight->NumActiveMetrics());
+  assert(index < (unsigned)skysight->GetNumStandbyLayers());
   
-  SkysightStandbyLayer a = skysight->GetActiveMetric(index);  
-  if(!skysight->DisplayActiveMetric(a.metric->id.c_str()))
+  SkysightStandbyLayer a = skysight->GetStandbyLayer(index);  
+  if(!skysight->DisplayStandbyLayer(a.descriptor->id.c_str()))
     ShowMessageBox(_("Couldn't display data. There is no forecast data available for this time."), _("Display Error"), MB_OK);
   UpdateList();
 }
@@ -392,9 +390,9 @@ inline void
 SkysightWidget::DeactivateClicked()
 {
   unsigned index = GetList().GetCursorIndex();
-  assert(index < (unsigned)skysight->NumActiveMetrics());
+  assert(index < (unsigned)skysight->GetNumStandbyLayers());
 
-  skysight->DisplayActiveMetric();
+  skysight->DisplayStandbyLayer();
   UpdateList();
 }
 

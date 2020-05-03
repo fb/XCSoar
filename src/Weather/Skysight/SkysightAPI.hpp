@@ -71,8 +71,8 @@ public:
   std::vector<SkysightLayerDescriptor> descriptors;
   SkysightLayerDescriptor GetLayer(int index);
   SkysightLayerDescriptor *GetLayer(const tstring id);
-  bool LayerExists(const tstring id);
-  int NumLayers();
+  bool GetLayerDescriptorExists(const tstring id);
+  int GetNumLayerDescriptors();
 
 
   bool GetImageAt(const TCHAR *const layer, BrokenDateTime fctime, BrokenDateTime maxtime,

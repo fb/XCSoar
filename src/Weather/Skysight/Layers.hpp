@@ -49,16 +49,16 @@ public:
 
 
 struct SkysightStandbyLayer {
-  SkysightLayerDescriptor *metric;
+  SkysightLayerDescriptor *descriptor;
   uint64_t from = 0;
   uint64_t to = 0;
   uint64_t mtime = 0;
   bool updating = false;
   
 public:
-  SkysightStandbyLayer(SkysightLayerDescriptor *descriptor, uint64_t _from, uint64_t _to, uint64_t _mtime) : 
-                                        metric(descriptor), from(_from), to(_to), mtime(_mtime) {}
-  SkysightStandbyLayer(const SkysightStandbyLayer &layer) : metric(layer.metric), from(layer.from), 
+  SkysightStandbyLayer(SkysightLayerDescriptor *_descriptor, uint64_t _from, uint64_t _to, uint64_t _mtime) : 
+                                        descriptor(_descriptor), from(_from), to(_to), mtime(_mtime) {}
+  SkysightStandbyLayer(const SkysightStandbyLayer &layer) : descriptor(layer.descriptor), from(layer.from), 
 to(layer.to), mtime(layer.mtime), updating(layer.updating) {}
 };
 

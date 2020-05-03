@@ -42,7 +42,7 @@ Copyright_License {
 #include "Blackboard/BlackboardListener.hpp"
 
 
-#define SKYSIGHT_MAX_METRICS 5
+#define SKYSIGHT_MAX_STANDBY_LAYERS 5
 
 struct BrokenDateTime;
 
@@ -53,7 +53,7 @@ public:
   SkysightImageFile(Path _filename, Path _path);
   Path fullpath;
   Path filename;
-  tstring metric;
+  tstring layer;
   tstring region;
   uint64_t datetime;
   bool is_valid;
@@ -63,7 +63,7 @@ public:
 class Skysight final : private NullBlackboardListener { //: public Timer {
   public:
     tstring region = "EUROPE";
-    SkysightDisplayedLayer displayed_metric;
+    SkysightDisplayedLayer displayed_layer;
     
     static void DownloadComplete(const tstring details,  const bool success,  
                 const tstring layer_id,  const uint64_t time_index);
@@ -83,11 +83,11 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     SkysightLayerDescriptor *GetLayer(const tstring id) {
       return api.GetLayer(id);
     }
-    bool LayerExists(const tstring id) {
-      return api.LayerExists(id);
+    bool GetLayerDescriptorExists(const tstring id) {
+      return api.GetLayerDescriptorExists(id);
     }
-    int NumLayers() {
-      return api.NumLayers();
+    int GetNumLayerDescriptors() {
+      return api.GetNumLayerDescriptors();
     }
 
     Skysight();
@@ -96,23 +96,22 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     void Init();
     bool IsReady(bool force_update = false);
 
-    void SaveActiveMetrics();
-    void LoadActiveMetrics();
+    void SaveStandbyLayers();
+    void LoadStandbyLayers();
 
-    void RemoveActiveMetric(int index);
-    void RemoveActiveMetric(const tstring id);
-    bool ActiveMetricsUpdating();
+    void RemoveStandbyLayer(const tstring id);
+    bool StandbyLayersUpdating();
     bool SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m);
-    void SetActveMetricUpdateState(const tstring id, bool state = false);
-    void RefreshActiveMetric(tstring id);
-    SkysightStandbyLayer GetActiveMetric(int index);
-    SkysightStandbyLayer GetActiveMetric(const tstring id);
-    int NumActiveMetrics();
+    void SetStandbyLayerUpdateState(const tstring id, bool state = false);
+    void RefreshStandbyLayer(tstring id);
+    SkysightStandbyLayer GetStandbyLayer(int index);
+    SkysightStandbyLayer *GetStandbyLayer(const tstring id);
+    int GetNumStandbyLayers();
     bool StandbyLayersFull();
     bool IsStandbyLayer(const TCHAR *const id);
     int AddStandbyLayer(const TCHAR *const id);
-    bool DownloadActiveMetric(tstring id);
-    bool DisplayActiveMetric(const TCHAR *const id = nullptr);
+    bool DownloadStandbyLayer(tstring id);
+    bool DisplayStandbyLayer(const TCHAR *const id = nullptr);
 
 
     static inline 

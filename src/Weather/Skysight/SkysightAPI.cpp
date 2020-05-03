@@ -90,12 +90,12 @@ SkysightLayerDescriptor *SkysightAPI::GetLayer(const tstring id) {
 /** Checks if layer with given id exists as a layer descriptor
  * 
  */
-bool SkysightAPI::LayerExists(const tstring id) {
+bool SkysightAPI::GetLayerDescriptorExists(const tstring id) {
   return GetLayer(id) != NULL;
 }
 
 
-int SkysightAPI::NumLayers() {
+int SkysightAPI::GetNumLayerDescriptors() {
   return (int)descriptors.size(); 
 }
 
