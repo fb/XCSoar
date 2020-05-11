@@ -104,7 +104,6 @@ protected:
   inline AllocatedPath GetPath(SkysightCallType type, const char *const layer = nullptr, 
                                const uint64_t fctime = 0);
 
-  static bool LoadFromFile(Path path, tstring &content);
   bool GetResult(const SkysightRequestArgs &args, const tstring result, boost::property_tree::ptree &output);
   bool CacheAvailable(Path path, SkysightCallType calltype,
                              const TCHAR *const layer = nullptr);

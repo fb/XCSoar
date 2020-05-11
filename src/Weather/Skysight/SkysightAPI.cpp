@@ -486,17 +486,6 @@ bool SkysightAPI::GetData(SkysightCallType t, const TCHAR *const layer,
   return true;
 }
 
-bool SkysightAPI::LoadFromFile(Path path, tstring &content) {
-  FileLineReader reader(path, Charset::AUTO);
-  content = "";
-  char *line;
-  while ((line = reader.ReadLine()) != NULL) {
-    content += line;
-  }
-
-  return true;
-}
-
 bool SkysightAPI::CacheAvailable(Path path, SkysightCallType calltype, const TCHAR *const layer) {
 
   uint64_t layer_updated = 0;
