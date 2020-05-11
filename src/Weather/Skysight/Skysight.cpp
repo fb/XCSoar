@@ -68,7 +68,6 @@ Copyright_License {
  * -- no transparent bg on overlay on android
  * 
  * --- for release ----
- * - Use SkysightImageFile elsewhere instead of recalculating forecast time, move to separate imp file
  * - clean up libs
  * - rebase on latest master, clean up
  * - move cache trimming to API?
@@ -87,59 +86,19 @@ Copyright_License {
 
 Skysight *Skysight::self;
 
-/*
- * 
- * Img File
- * 
- */
+uint64_t Skysight::ParseTimeInFilename(tstring filename) {
+  tstring timestamp = filename.substr(filename.rfind(_("-")) + 1);
+  unsigned yy = stoi(timestamp.substr(0, 4));
+  unsigned mm = stoi(timestamp.substr(4, 2));
+  unsigned dd = stoi(timestamp.substr(6, 2));
+  unsigned hh = stoi(timestamp.substr(8, 2));
+  unsigned ii = stoi(timestamp.substr(10, 2));
 
+  BrokenDateTime dateTime = BrokenDateTime(yy, mm, dd, hh, ii);
+  if(!dateTime.IsPlausible())
+    return 0;
 
-SkysightImageFile::SkysightImageFile(Path _filename) {
-  filename = _filename;
-  region = tstring(_("INVALID"));
-  layer = tstring(_("INVALID"));
-  datetime = 0;
-  is_valid = false;
-  mtime = 0;
-  
-
-  //images are in format region-metric-datetime.tif
-  
-  if(!filename.MatchesExtension(".tif"))
-    return;
-    
-  tstring file_base = filename.GetBase().c_str();
-  
-  std::size_t p = file_base.find(_("-"));
-  if(p == tstring::npos)
-    return;
-    
-  tstring reg = file_base.substr(0, p);  
-  tstring rem = file_base.substr(p+1);  
-  
-  p = rem.find(_("-"));
-  if(p == tstring::npos)
-    return;    
-  tstring layer_tmp = rem.substr(0, p);
-
-  tstring dt = rem.substr(p+1);
-  unsigned yy = stoi(dt.substr(0, 4));
-  unsigned mm = stoi(dt.substr(4, 2));
-  unsigned dd = stoi(dt.substr(6, 2));
-  unsigned hh = stoi(dt.substr(8, 2));
-  unsigned ii = stoi(dt.substr(10, 2));
-
-  BrokenDateTime d = BrokenDateTime(yy, mm, dd, hh, ii);
-  if(!d.IsPlausible())
-    return;
-
-  datetime = d.ToUnixTimeUTC();
-
-  mtime = File::GetLastModification( AllocatedPath::Build(MakeLocalPath(_T("skysight")), filename) );
-
-  region = reg;
-  layer = layer_tmp;
-  is_valid = true;
+  return dateTime.ToUnixTimeUTC();
 }
 
 bool Skysight::IsStandbyLayer(const TCHAR *const id) {
@@ -314,23 +273,22 @@ void Skysight::APIInited(const tstring details,  const bool success,
 bool Skysight::SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m) {
   
   tstring search_pattern = region + "-" + layer_name + "*";
-  std::vector<SkysightImageFile> img_files = ScanFolder(search_pattern);
+  std::vector<tstring> img_files = ScanFolder(search_pattern);
   
   if(img_files.size() > 0) {
     uint64_t min_date = (uint64_t)std::numeric_limits<uint64_t>::max;
     uint64_t max_date = 0;
-    uint64_t updated = 0;
     
     for(auto &i : img_files) {
-      min_date = std::min(min_date, i.datetime);
-      max_date = std::max(max_date, i.datetime);
-      updated  = std::max(updated, i.mtime);
+      uint64_t time = ParseTimeInFilename(i);
+      min_date = std::min(min_date, time);
+      max_date = std::max(max_date, time);
     }
     if(GetLayerDescriptorExists(layer_name)) {
       m.descriptor =new SkysightLayerDescriptor(*GetLayer(layer_name));
       m.from = min_date;
       m.to = max_date;
-      m.mtime = updated;
+      m.mtime = File::GetLastModification(AllocatedPath::Build(MakeLocalPath(_T("skysight")), img_files[0].c_str()));
       
       return true;
     }
@@ -339,21 +297,17 @@ bool Skysight::SetupStandbyLayer(tstring layer_name, SkysightStandbyLayer &m) {
   return false;
 }
 
-std::vector<SkysightImageFile> Skysight::ScanFolder(tstring search_string = "*.tif") {
+std::vector<tstring> Skysight::ScanFolder(tstring search_string = "*.tif") {
   
-  //start by checking for output files
-  std::vector<SkysightImageFile> file_list;
-  
+  std::vector<tstring> file_list;
   struct SkysightFileVisitor : public File::Visitor {
-    std::vector<SkysightImageFile> &file_list;
-    explicit SkysightFileVisitor(std::vector<SkysightImageFile> &_file_list) : file_list(_file_list) {}
+    std::vector<tstring> &file_list;
+    explicit SkysightFileVisitor(std::vector<tstring> &_file_list) : file_list(_file_list) {}
 
     void Visit(Path path, Path filename) override {
       //is this a tif filename
       if(filename.MatchesExtension(".tif")) {
-        SkysightImageFile img_file = SkysightImageFile(filename);
-        if (img_file.is_valid)
-          file_list.emplace_back(img_file);
+        file_list.emplace_back(filename.GetBase().c_str());
       }
     }
     
@@ -371,9 +325,7 @@ void Skysight::CleanupFiles() {
     const uint64_t to;
     void Visit(Path path, Path filename) override {
       if(filename.MatchesExtension(".tif")) {
-        SkysightImageFile img_file = SkysightImageFile(filename);
-        if( (img_file.mtime <= (to - (60*60*24*5))) || 
-                                            (img_file.datetime < (to - (60*60*24))) ) {
+        if(self->ParseTimeInFilename(filename.GetBase().c_str()) < (to - (60*60*24))) {
           File::Delete(path);
         }
       } 

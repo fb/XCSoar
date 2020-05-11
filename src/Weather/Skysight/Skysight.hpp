@@ -46,18 +46,6 @@ Copyright_License {
 
 struct BrokenDateTime;
 
-
-struct SkysightImageFile {
-public:
-  SkysightImageFile(Path _filename);
-  Path filename; //!< e.g. EUROPE-hwcrit-202005021300.tif
-  tstring layer; //!< e.g. hwcrit
-  tstring region; //!< e.g. EUROPE
-  uint64_t datetime; //!< e.g. 202005021300 converted to uint64_t
-  bool is_valid;
-  uint64_t mtime;
-};
-
 class Skysight final : private NullBlackboardListener { //: public Timer {
   public:
     tstring region = "EUROPE";
@@ -109,6 +97,7 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     int AddStandbyLayer(const TCHAR *const id);
     void DownloadStandbyLayer(const unsigned index);
     bool DisplayStandbyLayer(const unsigned index);
+    uint64_t ParseTimeInFilename(tstring filename);
 
 
     static inline 
@@ -140,7 +129,7 @@ class Skysight final : private NullBlackboardListener { //: public Timer {
     BrokenDateTime GetForecastTime(BrokenDateTime curr_time);
     std::vector<SkysightStandbyLayer> standby_layers;
 
-    std::vector<SkysightImageFile>  ScanFolder(tstring search_pattern);
+    std::vector<tstring>  ScanFolder(tstring search_pattern);
     void CleanupFiles();
 
 };
