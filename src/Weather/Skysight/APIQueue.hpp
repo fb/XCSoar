@@ -26,18 +26,18 @@ Copyright_License {
 #include "Request.hpp"
 #include "CDFDecoder.hpp"
 #include "Layers.hpp"
-#include "Event/Timer.hpp"
+#include "Event/PeriodicTimer.hpp"
 #include <deque>
 #include <queue>
 
 
-class SkysightAPIQueue final : public Timer {
+class SkysightAPIQueue final {
   std::deque<std::unique_ptr<SkysightAsyncRequest>> request_deque;
   std::queue<std::unique_ptr<CDFDecoder>> decode_queue;
   bool is_busy = false;
+  PeriodicTimer timer{[this]{ Process(); }};
   
   void Process();
-  void OnTimer() override;
   
   tstring key;
   uint64_t key_expiry_time = 0;
@@ -45,8 +45,10 @@ class SkysightAPIQueue final : public Timer {
   tstring password;
   
 public:
-  SkysightAPIQueue() : Timer() {};
-  ~SkysightAPIQueue();
+  SkysightAPIQueue(){};
+  ~SkysightAPIQueue() {
+    timer.Cancel();
+  };
   
   void SetCredentials(const tstring _email, const tstring _pass);
   void SetKey(const tstring &&_key, const uint64_t _key_expiry_time);

@@ -46,7 +46,7 @@ Copyright_License {
 #include "Util/StringAPI.hxx"
 #include "Renderer/TextRowRenderer.hpp"
 #include "Renderer/TwoTextRowsRenderer.hpp"
-#include "Event/Timer.hpp"
+#include "Event/PeriodicTimer.hpp"
 
 #include "Protection.hpp"
 #include "DataGlobals.hpp"
@@ -159,7 +159,7 @@ public:
 };
 
 class SkysightWidget final
-  : public ListWidget, private ActionListener, private Timer {
+  : public ListWidget, private ActionListener {
   enum Buttons {
     ACTIVATE,
     DEACTIVATE,
@@ -185,6 +185,7 @@ class SkysightWidget final
 
   SkysightListItemRenderer row_renderer;
   std::shared_ptr<Skysight> skysight;
+  PeriodicTimer timer{[this]{ UpdateList(); }};
 
 public:
   explicit SkysightWidget(std::shared_ptr<Skysight> &&_skysight)
@@ -229,9 +230,6 @@ private:
   /* virtual methods from class ActionListener */
   virtual void OnAction(int id) noexcept override;
   
-  /* virtual methods from Timer */
-  virtual void OnTimer() override;
-  
 };
 
 void
@@ -252,20 +250,14 @@ SkysightWidget::Prepare(ContainerWindow &parent, const PixelRect &rc)
   const DialogLook &look = UIGlobals::GetDialogLook();
   CreateList(parent, look, rc, row_renderer.CalculateLayout(look));
   UpdateList();
-  Timer::Schedule(std::chrono::milliseconds(500));
+  timer.Schedule(std::chrono::milliseconds(500));
 }
 
 void
 SkysightWidget::Unprepare()
 {
-  Timer::Cancel();
+  timer.Cancel();
   DeleteWindow();
-}
-
-void
-SkysightWidget::OnTimer()
-{
-  UpdateList();
 }
 
 

@@ -26,8 +26,6 @@ Copyright_License {
 #include "Request.hpp"
 #include "SkysightRegions.hpp"
 
-#include "Event/Timer.hpp"
-
 #include "Util/StaticString.hxx"
 
 #include <memory>
@@ -58,7 +56,7 @@ Copyright_License {
 SkysightAPI *SkysightAPI::self;
 
 SkysightAPI::~SkysightAPI() {
-  Timer::Cancel();
+  timer.Cancel();
 }
 
 SkysightLayerDescriptor SkysightAPI::GetLayer(int index) {
@@ -190,7 +188,7 @@ void SkysightAPI::Init(tstring email, tstring password, tstring _region, Skysigh
   GetData(SkysightCallType::Regions, cb);
   
   // Check for maintenance actions every 15 mins
-  Timer::Schedule(std::chrono::milliseconds(900000));
+  timer.Schedule(std::chrono::milliseconds(900000));
    
 }
 

@@ -26,13 +26,8 @@ Copyright_License {
 #include "Request.hpp"
 #include "CDFDecoder.hpp"
 #include "Layers.hpp"
-#include "Event/Timer.hpp"
+#include "Event/PeriodicTimer.hpp"
 #include "Time/BrokenDateTime.hpp"
-
-
-SkysightAPIQueue::~SkysightAPIQueue() { 
-  Timer::Cancel();
-}
 
 void SkysightAPIQueue::AddRequest(std::unique_ptr<SkysightAsyncRequest> request, bool append_end) {
   
@@ -74,8 +69,8 @@ void SkysightAPIQueue::Process() {
           }
         }
 
-        if(!Timer::IsActive())
-          Timer::Schedule(std::chrono::milliseconds(300));
+        if(!timer.IsActive())
+          timer.Schedule(std::chrono::milliseconds(300));
         break;
       case SkysightRequest::Status::Complete:
       case SkysightRequest::Status::Error:
@@ -94,8 +89,8 @@ void SkysightAPIQueue::Process() {
      switch(decode_job->GetStatus()) {
       case CDFDecoder::Status::Idle:
         decode_job->DecodeAsync();
-        if(!Timer::IsActive())
-          Timer::Schedule(std::chrono::milliseconds(300));
+        if(!timer.IsActive())
+          timer.Schedule(std::chrono::milliseconds(300));
         break;
       case CDFDecoder::Status::Complete:
       case CDFDecoder::Status::Error:
@@ -108,14 +103,14 @@ void SkysightAPIQueue::Process() {
   }
 
   if(request_deque.empty() && decode_queue.empty()) {
-    Timer::Cancel();
+    timer.Cancel();
   }
   is_busy = false;
  
 }
 
 void SkysightAPIQueue::Clear(const tstring &&msg) {
-  Timer::Cancel();
+  timer.Cancel();
   for(u_int i = 0; i < request_deque.size(); i++){
     SkysightAsyncRequest *request = request_deque.front().get();
     if(request->GetStatus() != SkysightRequest::Status::Busy) {
@@ -143,8 +138,4 @@ bool SkysightAPIQueue::IsLoggedIn() {
   //Add a 2-minute padding so that token doesn't expire mid-way thru a request
   return ( ((int64_t)(key_expiry_time - now)) > (60*2) );
   
-}
-
-void SkysightAPIQueue::OnTimer() {
-  Process();
 }

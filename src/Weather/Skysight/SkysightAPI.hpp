@@ -28,6 +28,7 @@ Copyright_License {
 #include "APIQueue.hpp"
 #include "Layers.hpp"
 
+#include "Event/PeriodicTimer.hpp"
 
 #include "Util/tstring.hpp"
 #include <memory>
@@ -49,15 +50,16 @@ Copyright_License {
 
 struct BrokenDateTime;
 
-class SkysightAPI final : public Timer {
+class SkysightAPI final {
 
   friend struct SkysightRequest;
   friend struct SkysightAsyncRequest;
   friend class  CDFDecoder;
+  PeriodicTimer timer{[this]{ OnTimer(); }};
 
 public:
   
-  SkysightAPI() : Timer(), cache_path(MakeLocalPath(_T("skysight")))  {
+  SkysightAPI() : cache_path(MakeLocalPath(_T("skysight")))  {
     self = this;
   };
   ~SkysightAPI();
@@ -98,8 +100,6 @@ protected:
   const AllocatedPath cache_path;
   SkysightAPIQueue queue;
  
-  void OnTimer() override;
- 
   inline const tstring GetUrl(SkysightCallType type, const char *const layer = nullptr, const uint64_t from = 0); 
   inline AllocatedPath GetPath(SkysightCallType type, const char *const layer = nullptr, 
                                const uint64_t fctime = 0);
@@ -135,6 +135,8 @@ protected:
                SkysightCallback cb = nullptr, bool force_recache = false);
 
   bool Login(const SkysightCallback cb = nullptr);
+
+  void OnTimer();
 };
 
 
