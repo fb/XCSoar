@@ -61,8 +61,8 @@ public:
 
   public:
     FileHandler(FILE *_file) :file(_file) {};
-    void DataReceived(const void *data, size_t length) override;
-    void ResponseReceived(int64_t content_length) override;
+    bool DataReceived(const void *data, size_t length) noexcept override;
+    bool ResponseReceived(int64_t content_length) noexcept override;
   };
 
   class BufferHandler final : public Net::ResponseHandler {
@@ -74,8 +74,8 @@ public:
     BufferHandler(void *_buffer, size_t _max_size)
       :buffer((uint8_t *)_buffer), max_size(_max_size) {}
     size_t GetReceived() const;
-    void ResponseReceived(int64_t content_length) override;
-    void DataReceived(const void *data, size_t length) override;
+    bool ResponseReceived(int64_t content_length) noexcept override;
+    bool DataReceived(const void *data, size_t length) noexcept override;
   };
   
 protected:

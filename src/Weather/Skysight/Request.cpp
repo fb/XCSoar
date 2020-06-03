@@ -45,23 +45,26 @@ Copyright_License {
 
 
 
-void SkysightRequest::FileHandler::DataReceived(const void *data, size_t length) {
+bool SkysightRequest::FileHandler::DataReceived(const void *data, size_t length) noexcept{
 
   size_t written = fwrite(data, 1, length, file);
   if (written != (size_t)length)
-    throw SkysightRequestError();
+    return false;
   received += length;
+  return true;
 }
 
-void SkysightRequest::FileHandler::ResponseReceived(int64_t content_length) {
+bool SkysightRequest::FileHandler::ResponseReceived(int64_t content_length) noexcept{
+  return true;
 }
 
 size_t SkysightRequest::BufferHandler::GetReceived() const {
   return received;
 }
-void SkysightRequest::BufferHandler::ResponseReceived(int64_t content_length) {
+bool SkysightRequest::BufferHandler::ResponseReceived(int64_t content_length) noexcept{
+  return true;
 }
-void SkysightRequest::BufferHandler::DataReceived(const void *data, size_t length) {
+bool SkysightRequest::BufferHandler::DataReceived(const void *data, size_t length) noexcept{
     size_t remaining = max_size - received;
 
     if (length > remaining)
@@ -69,7 +72,7 @@ void SkysightRequest::BufferHandler::DataReceived(const void *data, size_t lengt
 
     memcpy(buffer + received, data, length);
     received += length;
-
+    return true;
 }
 
 SkysightRequest::Status SkysightAsyncRequest::GetStatus() {
@@ -244,6 +247,7 @@ bool SkysightRequest::RequestToBuffer(tstring &response) {
   }
 
   response = tstring(buffer, buffer + handler.GetReceived() / sizeof(buffer[0]));
+  LogFormat("Response %s", response.c_str());
   return success;
 }
 
